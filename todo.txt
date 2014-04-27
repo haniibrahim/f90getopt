@@ -1,0 +1,6 @@
+Bugs:
+=====
+
+f90getopt-sample --beta=test Gleichheitszeichen wird als Fehler erkannt.
+
+

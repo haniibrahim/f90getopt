@@ -50,11 +50,11 @@ contains
         character(len=80):: arg
 
         optarg = ''
-        if ( optind > iargc()) then
+        if ( optind > command_argument_count()) then
             getopt = char(0)
         endif
 
-        call getarg( optind, arg )
+        call get_command_argument( optind, arg )
         if ( present( longopts ) .and. arg(1:2) == '--' ) then
             getopt = process_long( longopts, arg )
         elseif ( arg(1:1) == '-' ) then
@@ -81,11 +81,12 @@ contains
                 optopt = longopts(i)%arg
                 process_long = optopt
                 if ( longopts(i)%has_arg ) then
-                    if ( optind <= iargc()) then
-                        call getarg( optind, optarg )
+                    if ( optind <= command_argument_count()) then
+                        call get_command_argument( optind, optarg )
                         optind = optind + 1
                     elseif ( opterr ) then
                         print '(a,a,a)', "Error: option '", trim(arg), "' requires an argument"
+                        process_long=char(0) ! Option not valid
                     endif
                 endif
                 return
@@ -125,12 +126,13 @@ contains
             if ( arglen > grpind ) then
                 ! -xarg, return remainder of arg
                 optarg = arg(grpind+1:arglen)
-            elseif ( optind <= iargc()) then
+            elseif ( optind <= command_argument_count()) then
                 ! -x arg, return next arg
-                call getarg( optind, optarg )
+                call get_command_argument( optind, optarg )
                 optind = optind + 1
             elseif ( opterr ) then
                 print '(a,a,a)', "Error: option '-", optopt, "' requires an argument"
+                process_short = char(0) ! Option not valid
             endif
             grpind = 2
         elseif ( arglen > grpind ) then

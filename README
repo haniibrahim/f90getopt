@@ -47,15 +47,19 @@ is no requirement that every long option has a short option, or vice-versa.)
 
 -----
 EXAMPLE
-program test
+rogram f90getopt_sample
     use f90getopt
     implicit none
-    character:: ch
+    !character:: ch ! Unused: ch=getopt()
+
+    ! START For longopts only
     type(option_s):: opts(2)
     opts(1) = option_s( "alpha", .false., 'a' )
     opts(2) = option_s( "beta",  .true.,  'b' )
-    do
-        select case( getopt( "ab:c", opts ))
+    ! END longopts
+
+      do
+        select case( getopt( "ab:", opts ) ) ! opts is optional (for longopts only)
             case( char(0))
                 exit
             case( 'a' )
@@ -68,7 +72,8 @@ program test
                 print *, 'unhandled option ', optopt, ' (this is a bug)'
         end select
     end do
-end program test
+end program f90getopt_sample
+
 
 Differences from C version:
 - when options are finished, C version returns -1 instead of char(0),
