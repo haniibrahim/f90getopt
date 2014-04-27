@@ -63,7 +63,6 @@ program test
             case( 'b' )
                 print *, 'option beta/b=', optarg
             case( '?' )
-                print *, 'unknown option ', optopt
                 stop
             case default
                 print *, 'unhandled option ', optopt, ' (this is a bug)'

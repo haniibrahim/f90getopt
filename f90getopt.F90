@@ -1,105 +1,16 @@
-
-
-! ------------------------------------------------------------
-! Copyright 2008 by Mark Gates
-!
-! This program is free software; you can redistribute or modify it under
-! the terms of the GNU general public license (GPL), version 2 or later.
-!
-! This program is distributed in the hope that it will be useful, but
-! WITHOUT ANY WARRANTY; without even the implied warranty of
-! merchantability or fitness for a particular purpose.
-!
-! If you wish to incorporate this into non-GPL software, please contact
-! me regarding licensing terms.
-!
-! ------------------------------------------------------------
-! Fortran 95 getopt() and getopt_long(), similar to those in standard C library.
-!
-! ch = getopt( optstring, [longopts] )
-! Returns next option character from command line arguments.
-! If an option is not recognized, it returns '?'.
-! If no options are left, it returns a null character, char(0).
-!
-! optstring contains characters that are recognized as options.
-! If a character is followed by a colon, then it takes a required argument.
-! For example, "x" recognizes "-x", while "x:" recognizes "-x arg" or "-xarg".
-!
-! optopt is set to the option character, even if it isn't recognized.
-! optarg is set to the option's argument.
-! optind has the index of the next argument to process. Initially optind=1.
-! Errors are printed by default. Set opterr=.false. to suppress them.
-!
-! Grouped options are allowed, so "-abc" is the same as "-a -b -c".
-!
-! If longopts is present, it is an array of type(option_s), where each entry
-! describes one long option.
-!
-!    type option_s
-!        character(len=80) :: name
-!        logical           :: has_arg
-!        character         :: val
-!    end type
-!
-! The name field is the option name, without the leading -- double dash.
-! Set the has_arg field to true if it requires an argument, false if not.
-! The val field is returned. Typically this is set to the corresponding short
-! option, so short and long options can be processed together. (But there
-! is no requirement that every long option has a short option, or vice-versa.)
-!
-! -----
-! EXAMPLE
-! program test
-!     use f90getopt
-!     implicit none
-!     character:: ch
-!     type(option_s):: opts(2)
-!     opts(1) = option_s( "alpha", .false., 'a' )
-!     opts(2) = option_s( "beta",  .true.,  'b' )
-!     do
-!         select case( getopt( "ab:c", opts ))
-!             case( char(0))
-!                 exit
-!             case( 'a' )
-!                 print *, 'option alpha/a'
-!             case( 'b' )
-!                 print *, 'option beta/b=', optarg
-!             case( '?' )
-!                 print *, 'unknown option ', optopt
-!                 stop
-!             case default
-!                 print *, 'unhandled option ', optopt, ' (this is a bug)'
-!         end select
-!     end do
-! end program test
-!
-! Differences from C version:
-! - when options are finished, C version returns -1 instead of char(0),
-!   and thus stupidly requires an int instead of a char.
-! - does not support optreset
-! - does not support "--" as last argument
-! - if no argument, optarg is blank, not NULL
-! - argc and argv are implicit
-!
-! Differences for long options:
-! - optional argument to getopt(), rather than separate function getopt_long()
-! - has_arg is logical, and does not support optional_argument
-! - does not support flag field (and thus always returns val)
-! - does not support longindex
-! - does not support "--opt=value" syntax, only "--opt value"
-! - knows the length of longopts, so does not need an empty last record
-
 module f90getopt
+
     implicit none
-    character(len=80):: optarg
-    character:: optopt
-    integer:: optind=1
-    logical:: opterr=.true.
+
+    character(len=80):: optarg        ! Option's argument
+    character        :: optopt        ! Option character
+    integer          :: optind=1      ! Index of the next argument to process
+    logical          :: opterr=.true. ! Errors are printed by default. Set opterr=.false. to suppress them
 
     type option_s
-        character(len=80) :: name
-        logical           :: has_arg
-        character         :: val
+        character(len=80) :: name     ! Name of the option
+        logical           :: has_arg  ! Option has an argument (.true./.false.)
+        character         :: arg      ! When has_arg=.true. then arg contains the argument of option
     end type option_s
 
     ! grpind is index of next option within group; always >= 2
@@ -167,7 +78,7 @@ contains
         optind = optind + 1
         do i = 1, size(longopts)
             if ( arg(3:) == longopts(i)%name ) then
-                optopt = longopts(i)%val
+                optopt = longopts(i)%arg
                 process_long = optopt
                 if ( longopts(i)%has_arg ) then
                     if ( optind <= iargc()) then
