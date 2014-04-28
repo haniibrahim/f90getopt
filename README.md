@@ -24,3 +24,6 @@ Fortran 90 compiler which offers Fortran 2003 features *command_argument_count()
 
 GNU Public License v. 2.0
 
+## Notes
+Management files for IDE Code::Blocks included.
+
