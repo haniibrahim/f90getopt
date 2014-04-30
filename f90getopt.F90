@@ -2,6 +2,17 @@ module f90getopt
 
     implicit none
 
+    ! Portable declaration of stderr, stdin, stdout
+#ifdef f2003
+    use, intrinsic :: iso_fortran_env, only : input_unit=>stdin, &
+        output_unit=>stdout, &
+        error_unit=>stderr
+#else
+#define stdin  5
+#define stdout 6
+#define stderr 0
+#endif
+
     character(len=80):: optarg        ! Option's argument
     character        :: optopt        ! Option character
     integer          :: optind=1      ! Index of the next argument to process
@@ -85,7 +96,7 @@ contains
                         call get_command_argument( optind, optarg )
                         optind = optind + 1
                     elseif ( opterr ) then
-                        print '(a,a,a)', "Error: option '", trim(arg), "' requires an argument"
+                        write(stderr, '(a,a,a)') "Error: option '", trim(arg), "' requires an argument"
                         process_long=char(0) ! Option not valid
                     endif
                 endif
@@ -95,7 +106,7 @@ contains
         ! else not found
         process_long = '?'
         if ( opterr ) then
-            print '(a,a,a)', "Error: unrecognized option '", trim(arg), "'"
+            write(stderr, '(a,a,a)') "Error: unrecognized option '", trim(arg), "'"
         endif
     end function process_long
 
@@ -117,7 +128,7 @@ contains
             ! unrecognized option
             process_short = '?'
             if ( opterr ) then
-                print '(a,a,a)', "Error: unrecognized option '-", optopt, "'"
+                write(stderr, '(a,a,a)') "Error: unrecognized option '-", optopt, "'"
             endif
         endif
         if ( i > 0 .and. substr( optstring, i+1, i+1 ) == ':' ) then
@@ -131,7 +142,7 @@ contains
                 call get_command_argument( optind, optarg )
                 optind = optind + 1
             elseif ( opterr ) then
-                print '(a,a,a)', "Error: option '-", optopt, "' requires an argument"
+                write(stderr, '(a,a,a)') "Error: option '-", optopt, "' requires an argument"
                 process_short = char(0) ! Option not valid
             endif
             grpind = 2
