@@ -93,7 +93,7 @@ contains
 
         ! search for equal sign in arg and set flag "has_equalsign" and
         ! length of arg (till equal sign)
-        do j=1, len(arg)
+        do j=1, len_arg
             if (arg(j:j) == "=") then
                 has_equalsign = .true.
                 len_arg = j-1
