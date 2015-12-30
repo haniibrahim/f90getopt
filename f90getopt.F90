@@ -86,29 +86,31 @@ contains
 
         ! local variables
         integer :: i, j
-        integer :: len_arg                 ! length of arg
-        logical :: has_equalsign = .false. ! arg contains equal sign?
-
-        len_arg = len(arg)
-
-        ! search for equal sign in arg and set flag "has_equalsign" and
-        ! length of arg (till equal sign)
-        do j=1, len_arg
-            if (arg(j:j) == "=") then
-                has_equalsign = .true.
-                len_arg = j-1
-            endif
-        enddo
+!        integer :: len_arg                 ! length of arg
+!        logical :: has_equalsign = .false. ! arg contains equal sign?
+!
+!        len_arg = len(arg)
+!
+!        ! search for equal sign in arg and set flag "has_equalsign" and
+!        ! length of arg (till equal sign)
+!        do j=1, len_arg
+!            if (arg(j:j) == "=") then
+!                has_equalsign = .true.
+!                len_arg = j-1
+!            endif
+!        enddo
 
         ! search for matching long option
         optind = optind + 1
         do i = 1, size(longopts)
-            if ( arg(3:len_arg) == longopts(i)%name ) then
+!            if ( arg(3:len_arg) == longopts(i)%name ) then
+            if (arg(3:) == langopts(i)%name) then
                 optopt = longopts(i)%arg
                 process_long = optopt
 
                 ! if arg does not contain a equal sign
-                if ( longopts(i)%has_arg .and. has_equalsign .eqv. .false.) then
+!                if ( longopts(i)%has_arg .and. has_equalsign .eqv. .false.) then
+                if ( longopts(i)%has_arg) then
                     if ( optind <= command_argument_count()) then
                         call get_command_argument( optind, optarg )
                         optind = optind + 1
@@ -118,17 +120,17 @@ contains
                     endif
                 endif
 
-                ! if arg contains a equal sign
-                if ( longopts(i)%has_arg .and. has_equalsign ) then
-                    if ( len(arg(:j+1)) > 0 ) then
-                        optarg =arg(j+1:)
-                        !call get_command_argument( optind, optarg )
-                        optind = optind + 1
-                    elseif ( opterr ) then
-                        write(stderr, '(a,a,a)') "Error: option '", trim(arg), "' requires an argument"
-                        process_long=char(0) ! Option not valid
-                    endif
-                endif
+!                ! if arg contains a equal sign
+!                if ( longopts(i)%has_arg .and. has_equalsign ) then
+!                    if ( len(arg(:j+1)) > 0 ) then
+!                        optarg =arg(j+1:)
+!                        !call get_command_argument( optind, optarg )
+!                        optind = optind + 1
+!                    elseif ( opterr ) then
+!                        write(stderr, '(a,a,a)') "Error: option '", trim(arg), "' requires an argument"
+!                        process_long=char(0) ! Option not valid
+!                    endif
+!                endif
 
                 return
             endif

@@ -47,7 +47,7 @@ is no requirement that every long option has a short option, or vice-versa.)
 
 -----
 EXAMPLE
-rogram f90getopt_sample
+program f90getopt_sample
     use f90getopt
     implicit none
     !character:: ch ! Unused: ch=getopt()
