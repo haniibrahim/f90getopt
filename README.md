@@ -7,7 +7,7 @@ getopt()- and getopt_long()-like functionality (similar to the C-functions) for 
 
 Parsing command-line options and arguments like:
 
-   <pre>myapp -xv --longarg --arg 5.0 -p 9</pre>
+   <pre>myapp -xv --longarg --arg=5.0 -p 9</pre>
 
 ##Features:
 
@@ -15,7 +15,7 @@ Parsing command-line options and arguments like:
   * Short option with argument (e.g.: -p 9 or -p9)
   * Short options w/o arguments can be embraced (e.g.: -xv)
   * Long option w/o argument (e.g: --longarg)
-  * Long option w/ arument (e.g.: --arg 5.0), Equal sign (e.g.: --arg=5,0) is not supported yet. Planned in version 1.0
+  * Long option w/ arument (e.g.: --arg 5.0), Equal sign (e.g.: --arg=5,0)
 
 ##Requirements
 Fortran 90 compiler which offers Fortran 2003 features *command_argument_count()* and *get_command_argument()*.

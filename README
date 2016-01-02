@@ -44,6 +44,11 @@ Set the has_arg field to true if it requires an argument, false if not.
 The val field is returned. Typically this is set to the corresponding short
 option, so short and long options can be processed together. (But there
 is no requirement that every long option has a short option, or vice-versa.)
+Following long options are valid, e.g.:
+ --beta 7
+ --beta=7
+ --beta "text with blanks"
+ --beta="text with blanks"
 
 -----
 EXAMPLE
@@ -74,6 +79,11 @@ program f90getopt_sample
     end do
 end program f90getopt_sample
 
+Build the sample program: 
+	gfortran f90getopt.F90 f90getopt_sample -o f90getopt_sample
+and run it:
+	./f90getopt_sample
+
 
 Differences from C version:
 - when options are finished, C version returns -1 instead of char(0),
@@ -88,5 +98,4 @@ Differences for long options:
 - has_arg is logical, and does not support optional_argument
 - does not support flag field (and thus always returns val)
 - does not support longindex
-- does not support "--opt=value" syntax, only "--opt value"
 - knows the length of longopts, so does not need an empty last record
