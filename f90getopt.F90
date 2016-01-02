@@ -83,21 +83,51 @@ contains
         character(len=*), intent(in):: arg
 
         ! local variables
-        integer:: i
+        integer :: i = 0
+        integer :: j = 0
+        integer :: len_arg = 0             ! length of arg
+        logical :: has_equalsign = .false. ! arg contains equal sign?
+
+        len_arg = len_trim(arg)
+
+        ! search for equal sign in arg and set flag "has_equalsign" and
+        ! length of arg (till equal sign)
+        do j=1, len_arg
+            if (arg(j:j) == "=") then
+                has_equalsign = .true.
+                len_arg = j-1
+                exit
+            endif
+        enddo
 
         ! search for matching long option
-        optind = optind + 1
+
+        if (.not. has_equalsign) then
+            optind = optind + 1
+        endif
+
         do i = 1, size(longopts)
-            if ( arg(3:) == longopts(i)%name ) then
+            if ( arg(3:len_arg) == longopts(i)%name ) then
                 optopt = longopts(i)%arg
                 process_long = optopt
                 if ( longopts(i)%has_arg ) then
-                    if ( optind <= command_argument_count()) then
-                        call get_command_argument( optind, optarg )
-                        optind = optind + 1
-                    elseif ( opterr ) then
-                        write(stderr, '(a,a,a)') "Error: option '", trim(arg), "' requires an argument"
-                        process_long=char(0) ! Option not valid
+                    if (has_equalsign) then ! long option has equal sign between value and option
+                        if (arg(len_arg+2:) == '') then ! no argument (len_arg+2 value after "="
+                            write(stderr, '(a,a,a)') "Error: option '", trim(arg), "' requires an argument"
+                            process_long=char(0) ! Option not valid
+                        else
+                            call get_command_argument(optind, optarg)
+                            optarg = optarg(len_arg+2:)
+                            optind = optind + 1
+                        endif
+                    else ! long option has no equal sign between value and option
+                        if ( optind <= command_argument_count()) then
+                            call get_command_argument( optind, optarg )
+                            optind = optind + 1
+                        elseif ( opterr ) then
+                            write(stderr, '(a,a,a)') "Error: option '", trim(arg), "' requires an argument"
+                            process_long=char(0) ! Option not valid
+                        endif
                     endif
                 endif
                 return
