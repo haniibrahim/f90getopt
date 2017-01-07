@@ -50,7 +50,7 @@ Following long options are valid, e.g.:
  --beta "text with blanks"
  --beta="text with blanks"
 
------
+------------------------------------------------------------
 EXAMPLE
 program f90getopt_sample
     use f90getopt
@@ -79,11 +79,14 @@ program f90getopt_sample
     end do
 end program f90getopt_sample
 
-Build the sample program: 
-	gfortran f90getopt.F90 f90getopt_sample -o f90getopt_sample
+------------------------------------------------------------
+
+Build the sample program:
+	gfortran f90getopt.F90 f90getopt_sample.90 -o f90getopt_sample
 and run it:
 	./f90getopt_sample
 
+------------------------------------------------------------
 
 Differences from C version:
 - when options are finished, C version returns -1 instead of char(0),
