@@ -89,15 +89,16 @@ Change to the directory where the ```f90getopt.F90``` is located and type:
 
 ```
 gfortran -c f90getopt.F90
-ar cr f90getopt.a f90getopt.o
+ar cr libf90getopt.a f90getopt.o
+ranlib libf90getopt.a
 ```
 
-You will get a static libray called ```f90getopt.a``` and a module file ```f90getopt.mod```. Move the a-file on UNIX(-like) systems to ```/usr/lib```  (or ```/usr/local/lib``` if supported) and the mod-file to ```/usr/include``` (or ```/usr/local/include``` if supported). On Windows go to the appropriate directory of your compiler-system. MinGW and Cygwin are similar to UNIX. Integrated Development Environments (IDE) have their own rules. Refer the manual of your IDE.
+You will get a static libray called ```libf90getopt.a``` and a module file ```f90getopt.mod```. Move the a-file on UNIX(-like) systems to ```/usr/lib```  (or ```/usr/local/lib``` if supported) and the mod-file to ```/usr/include``` (or ```/usr/local/include``` if supported). On Windows go to the appropriate directory of your compiler-system. MinGW and Cygwin are similar to UNIX. Integrated Development Environments (IDE) have their own rules. Refer the manual of your IDE.
 
 To compile and link the sample program with the libray can be done on Unices with:
 
 ```
-gfortran -o f90getopt-sample f90getopt-sample.f90 -I/usr/include /usr/lib/f90getopt.a
+gfortran -o f90getopt-sample f90getopt-sample.f90 -lf90getopt
 ```
 
 Change paths to match the right ones on Windows.
