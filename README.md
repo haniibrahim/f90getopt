@@ -21,32 +21,34 @@ Parsing command-line options and arguments like:
 Fortran 90 compiler which offers Fortran 2003 features *command_argument_count()* and *get_command_argument()*. E.g.: gfortran (GNU), g95 (g95.org), ifort (Intel), etc.
 
 ## Example
+
 ```
 program f90getopt_sample
-    use f90getopt
-    implicit none
-    !character:: ch ! Unused: ch=getopt()
+   use f90getopt
+   implicit none
+   !character:: ch ! Unused: ch=getopt()
 
-    ! START For longopts only
-    type(option_s):: opts(2)
-    opts(1) = option_s( "alpha", .false., 'a' )
-    opts(2) = option_s( "beta",  .true.,  'b' )
-    ! END longopts
+   ! START For longopts only
+   type(option_s):: opts(2)
+   opts(1) = option_s( "alpha", .false., 'a' )
+   opts(2) = option_s( "beta",  .true.,  'b' )
+   ! END longopts
 
-      do
-        select case( getopt( "ab:", opts ) ) ! opts is optional (for longopts only)
-            case( char(0))
-                exit
-            case( 'a' )
-                print *, 'option alpha/a'
-            case( 'b' )
-                print *, 'option beta/b=', optarg
-            case( '?' )
-                stop
-            case default
-                print *, 'unhandled option ', optopt, ' (this is a bug)'
-        end select
-    end do
+   do
+      select case( getopt( "ab:", opts ) ) ! opts is optional (for longopts only)
+         case( char(0))
+            exit
+         case( 'a' )
+            print *, 'option alpha/a'
+         case( 'b' )
+            print *, 'option beta/b=', optarg
+         case( '?' )
+            stop
+         case default
+            print *, 'unhandled option ', optopt, ' (this is a bug)'
+      end select
+   end do
+   
 end program f90getopt_sample
 ```
 
@@ -85,6 +87,8 @@ Output is:
 
 ## Compile and link to (static) library
 
+To avoid copying the source file `f90getopt.F90` to your working directory everytime you want to use their features, it make sense to create a static library. After, you just need to link the library to your project. To do this follow the steps below:
+
 Change to the directory where the ```f90getopt.F90``` is located and type:
 
 ```
@@ -93,7 +97,14 @@ ar cr libf90getopt.a f90getopt.o
 ranlib libf90getopt.a
 ```
 
-You will get a static libray called ```libf90getopt.a``` and a module file ```f90getopt.mod```. Move the a-file on UNIX(-like) systems to ```/usr/lib```  (or ```/usr/local/lib``` if supported) and the mod-file to ```/usr/include``` (or ```/usr/local/include``` if supported). On Windows go to the appropriate directory of your compiler-system. MinGW and Cygwin are similar to UNIX. Integrated Development Environments (IDE) have their own rules. Refer the manual of your IDE.
+You will get a static libray called ```libf90getopt.a``` and a module file ```f90getopt.mod```. Move the a-file on UNIX(-like) systems to ```/usr/local/lib``` and the mod-file to ```/usr/local/include```: 
+
+```
+sudo cp ./libf90getopt.F90 /usr/local/lib/
+sudo cp ./f90getopt.mod /usr/local/include/
+```
+
+On Windows go to the appropriate directory of your compiler-system. MinGW and Cygwin are similar to UNIX. Integrated Development Environments (IDE) have their own rules. Refer the manual of your IDE.
 
 To compile and link the sample program with the libray can be done on Unices with:
 
