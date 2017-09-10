@@ -13,7 +13,7 @@ module f90getopt
 #define stderr 0
 #endif
 
-    character(len=80):: optval        ! Option's value
+    character(len=80):: optarg        ! Option's value
     character        :: optopt        ! Option's character
     integer          :: optind=1      ! Index of the next argument to process
     logical          :: opterr=.true. ! Errors are printed by default. Set opterr=.false. to suppress them
@@ -60,7 +60,7 @@ contains
         ! local variables
         character(len=80):: arg
 
-        optval = ''
+        optarg = ''
         if ( optind > command_argument_count()) then
             getopt = char(0)
         endif
@@ -116,13 +116,13 @@ contains
                             write(stderr, '(a,a,a)') "ERROR: Option '", trim(arg), "' requires a value"
                             process_long=char(0) ! Option not valid
                         else
-                            call get_command_argument(optind, optval)
-                            optval = optval(len_arg+2:)
+                            call get_command_argument(optind, optarg)
+                            optarg = optarg(len_arg+2:)
                             optind = optind + 1
                         endif
                     else ! long option has no equal sign between value and option
                         if ( optind <= command_argument_count()) then
-                            call get_command_argument( optind, optval )
+                            call get_command_argument( optind, optarg )
                             optind = optind + 1
                         elseif ( opterr ) then
                             write(stderr, '(a,a,a)') "ERROR: Option '", trim(arg), "' requires a value"
@@ -168,10 +168,10 @@ contains
             optind = optind + 1
             if ( arglen > grpind ) then
                 ! -xarg, return remainder of arg
-                optval = arg(grpind+1:arglen)
+                optarg = arg(grpind+1:arglen)
             elseif ( optind <= command_argument_count()) then
                 ! -x arg, return next arg
-                call get_command_argument( optind, optval )
+                call get_command_argument( optind, optarg )
                 optind = optind + 1
             elseif ( opterr ) then
                 write(stderr, '(a,a,a)') "ERROR: Option '-", optopt, "' requires a value"

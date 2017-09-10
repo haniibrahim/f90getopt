@@ -24,31 +24,35 @@ Fortran 90 compiler which offers Fortran 2003 features *command_argument_count()
 
 ```
 program f90getopt_sample
-   use f90getopt
-   implicit none
-   !character:: ch ! Unused: ch=getopt()
+    use f90getopt
+    implicit none
+    !character:: ch ! Unused: ch=getopt()
 
-   ! START For longopts only
-   type(option_s):: opts(2)
-   opts(1) = option_s( "alpha", .false., 'a' )
-   opts(2) = option_s( "beta",  .true.,  'b' )
-   ! END longopts
+    ! START For longopts only
+    type(option_s):: opts(3)
+    opts(1) = option_s( "alpha", .false., 'a' )
+    opts(2) = option_s( "beta",  .true.,  'b' )
+    opts(3) = option_s( "help", .false.,  'h')
+    ! END longopts
 
-   do
-      select case( getopt( "ab:", opts ) ) ! opts is optional (for longopts only)
-         case( char(0))
-            exit
-         case( 'a' )
-            print *, 'option alpha/a'
-         case( 'b' )
-            print *, 'option beta/b=', optarg
-         case( '?' )
-            stop
-         case default
-            print *, 'unhandled option ', optopt, ' (this is a bug)'
-      end select
-   end do
-   
+    ! If no options were committed
+    if (command_argument_count() .eq. 0 ) then
+      write (*,*) "Available Options: -a. --alpha -b X --beta=X --beta X"
+    end if
+
+    ! Process options one by one
+    do
+        select case( getopt( "ahb:", opts ) ) ! opts is optional (for longopts only)
+            case( char(0) )
+                exit
+            case( 'a' )
+                print *, 'option alpha/a'
+            case( 'b' )
+                print *, 'option beta/b=', optval
+            case( 'h' )
+                print *, 'help-screen'
+        end select
+    end do
 end program f90getopt_sample
 ```
 
@@ -115,12 +119,45 @@ gfortran -o f90getopt-sample f90getopt-sample.f90 -lf90getopt
 Change paths to match the right ones on Windows.
 
 ## Userfunction
-| Type | Name | Description |
-|--------|--------|----|
-| function        | getopt(shortopt-string, [opts])  | short |
-| global variable | optarg                           | argument of the option |
-| global variable | optopt                           | option character, even if it isn't recognized
+| Type            | Name                                 | Brief Description                                                                                                  |
+| --------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| function        | getopt(shortopts-string, [longopts]) | Returns short option character & value (if applicable) of all arguments one by one                                 |
+| global variable | optarg                               | value of the current option, e.g. "3" when long argument = --num=3.                                                |
+| global variable | optopt                               | Option  (single) character e.g. "b" when option = -b                                                               |
+
+Refer example code above for details.
+
+## Differences ...
+
+### ... from C version
+- when options are finished, C version returns -1 instead of char(0),  and thus requires an int instead of a char.
+- does not support optreset
+- does not support "--" as last argument
+- if no argument, optarg is blank, not NULL
+- argc and argv are implicit
+
+### ... for long options
+- optional argument to getopt(), rather than separate function getopt_long()
+- has_arg is logical, and does not support optional_argument
+- does not support flag field (and thus always returns val)
+- does not support longindex
+- knows the length of longopts, so does not need an empty last record
+
+## 
+| Version | Description                                                                                                            |
+| ------- | ---------------------------------------------------------------------------------------------------------------------- |
+| 0.9.0   | Almost finished. Equal sign recognition in longoption (logopt=arg) is missing for v1.0                                 |
+| 1.0.0   | Added support for equal sign (=) in long options, like --beta=2.0. Error messages are displayed on stderr (not stdout) |
+| 1.0.1   | Longopt bug fixed and refactoring.                                      |
 
 ## License
 
-GNU Public License v. 2.0
+**GNU Public License v. 2.0**
+
+Copyright (C) 2014  Hani Andreas Ibrahim
+
+This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version. 
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
