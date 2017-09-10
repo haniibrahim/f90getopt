@@ -13,7 +13,7 @@ module f90getopt
 #define stderr 0
 #endif
 
-    character(len=80):: optarg        ! Option's argument
+    character(len=80):: optval        ! Option's value
     character        :: optopt        ! Option's character
     integer          :: optind=1      ! Index of the next argument to process
     logical          :: opterr=.true. ! Errors are printed by default. Set opterr=.false. to suppress them
@@ -21,7 +21,7 @@ module f90getopt
     type option_s
         character(len=80) :: name     ! Name of the option
         logical           :: has_arg  ! Option has an argument (.true./.false.)
-        character         :: arg      ! Option's character equal to optopt
+        character         :: short    ! Option's short character equal to optopt
     end type option_s
 
     ! grpind is index of next option within group; always >= 2
@@ -60,7 +60,7 @@ contains
         ! local variables
         character(len=80):: arg
 
-        optarg = ''
+        optval = ''
         if ( optind > command_argument_count()) then
             getopt = char(0)
         endif
@@ -108,24 +108,24 @@ contains
 
         do i = 1, size(longopts)
             if ( arg(3:len_arg) == longopts(i)%name ) then
-                optopt = longopts(i)%arg
+                optopt = longopts(i)%short
                 process_long = optopt
                 if ( longopts(i)%has_arg ) then
                     if (has_equalsign) then ! long option has equal sign between value and option
                         if (arg(len_arg+2:) == '') then ! no value (len_arg+2 value after "="
-                            write(stderr, '(a,a,a)') "ERROR: Option '", trim(arg), "' requires an argument"
+                            write(stderr, '(a,a,a)') "ERROR: Option '", trim(arg), "' requires a value"
                             process_long=char(0) ! Option not valid
                         else
-                            call get_command_argument(optind, optarg)
-                            optarg = optarg(len_arg+2:)
+                            call get_command_argument(optind, optval)
+                            optval = optval(len_arg+2:)
                             optind = optind + 1
                         endif
                     else ! long option has no equal sign between value and option
                         if ( optind <= command_argument_count()) then
-                            call get_command_argument( optind, optarg )
+                            call get_command_argument( optind, optval )
                             optind = optind + 1
                         elseif ( opterr ) then
-                            write(stderr, '(a,a,a)') "ERROR: Option '", trim(arg), "' requires an argument"
+                            write(stderr, '(a,a,a)') "ERROR: Option '", trim(arg), "' requires a value"
                             process_long=char(0) ! Option not valid
                         endif
                     endif
@@ -168,13 +168,13 @@ contains
             optind = optind + 1
             if ( arglen > grpind ) then
                 ! -xarg, return remainder of arg
-                optarg = arg(grpind+1:arglen)
+                optval = arg(grpind+1:arglen)
             elseif ( optind <= command_argument_count()) then
                 ! -x arg, return next arg
-                call get_command_argument( optind, optarg )
+                call get_command_argument( optind, optval )
                 optind = optind + 1
             elseif ( opterr ) then
-                write(stderr, '(a,a,a)') "ERROR: Option '-", optopt, "' requires an argument"
+                write(stderr, '(a,a,a)') "ERROR: Option '-", optopt, "' requires a value"
                 process_short = char(0) ! Option not valid
             endif
             grpind = 2
