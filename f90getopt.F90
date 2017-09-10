@@ -14,14 +14,14 @@ module f90getopt
 #endif
 
     character(len=80):: optarg        ! Option's argument
-    character        :: optopt        ! Option character
+    character        :: optopt        ! Option's character
     integer          :: optind=1      ! Index of the next argument to process
     logical          :: opterr=.true. ! Errors are printed by default. Set opterr=.false. to suppress them
 
     type option_s
         character(len=80) :: name     ! Name of the option
         logical           :: has_arg  ! Option has an argument (.true./.false.)
-        character         :: arg      ! When has_arg=.true. then arg contains the argument of option
+        character         :: arg      ! Option's character equal to optopt
     end type option_s
 
     ! grpind is index of next option within group; always >= 2
@@ -112,8 +112,8 @@ contains
                 process_long = optopt
                 if ( longopts(i)%has_arg ) then
                     if (has_equalsign) then ! long option has equal sign between value and option
-                        if (arg(len_arg+2:) == '') then ! no argument (len_arg+2 value after "="
-                            write(stderr, '(a,a,a)') "Error: option '", trim(arg), "' requires an argument"
+                        if (arg(len_arg+2:) == '') then ! no value (len_arg+2 value after "="
+                            write(stderr, '(a,a,a)') "ERROR: Option '", trim(arg), "' requires an argument"
                             process_long=char(0) ! Option not valid
                         else
                             call get_command_argument(optind, optarg)
@@ -125,7 +125,7 @@ contains
                             call get_command_argument( optind, optarg )
                             optind = optind + 1
                         elseif ( opterr ) then
-                            write(stderr, '(a,a,a)') "Error: option '", trim(arg), "' requires an argument"
+                            write(stderr, '(a,a,a)') "ERROR: Option '", trim(arg), "' requires an argument"
                             process_long=char(0) ! Option not valid
                         endif
                     endif
@@ -134,10 +134,12 @@ contains
             endif
         end do
         ! else not found
-        process_long = '?'
+        process_long = char(0)
+        optopt='?'
         if ( opterr ) then
-            write(stderr, '(a,a,a)') "Error: unrecognized option '", trim(arg), "'"
+            write(stderr, '(a,a,a)') "ERROR: Unrecognized option '", arg(1:len_arg), "'"
         endif
+        return
     end function process_long
 
 
@@ -158,7 +160,7 @@ contains
             ! unrecognized option
             process_short = '?'
             if ( opterr ) then
-                write(stderr, '(a,a,a)') "Error: unrecognized option '-", optopt, "'"
+                write(stderr, '(a,a,a)') "ERROR: Unrecognized option '-", optopt, "'"
             endif
         endif
         if ( i > 0 .and. substr( optstring, i+1, i+1 ) == ':' ) then
@@ -172,7 +174,7 @@ contains
                 call get_command_argument( optind, optarg )
                 optind = optind + 1
             elseif ( opterr ) then
-                write(stderr, '(a,a,a)') "Error: option '-", optopt, "' requires an argument"
+                write(stderr, '(a,a,a)') "ERROR: Option '-", optopt, "' requires an argument"
                 process_short = char(0) ! Option not valid
             endif
             grpind = 2

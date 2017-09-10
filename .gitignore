@@ -1,3 +1,4 @@
+.gitignore
 /obj/
 /bin/
 f90getopt.cbp
