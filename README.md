@@ -113,7 +113,7 @@ On Windows go to the appropriate directory of your compiler-system. MinGW and Cy
 To compile and link the sample program with the libray can be done on Unices with:
 
 ```
-gfortran -o f90getopt-sample f90getopt-sample.f90 -lf90getopt
+gfortran -o f90getopt-sample f90getopt-sample.f90 -I/usr/local/include -lf90getopt
 ```
 
 Change paths to match the right ones on Windows.
@@ -121,16 +121,14 @@ Change paths to match the right ones on Windows.
 ## Userfunction
 | Type            | Name                                 | Brief Description                                                                                                  |
 | --------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
-| function        | getopt(shortopts-string, [longopts]) | Returns short option character & value (if applicable) of all arguments one by one                                 |
-| global variable | optarg                               | value of the current option, e.g. "3" when long argument = --num=3.                                                |
-| global variable | optopt                               | Option  (single) character e.g. "b" when option = -b                                                               |
-
+| function        | getopt(shortopts-string, [longopts]) | Returns short option character & value (if applicable) of all arguments one by one  |
+| global variable | optarg                               | value of the current option, e.g. "3" when long argument = --num=3.                                                            |
+| global variable | optopt                               | Option  (single) character e.g. "b" when option = -b                                                                 |
 Refer example code above for details.
 
 ## Differences ...
-
 ### ... from C version
-- when options are finished, C version returns -1 instead of char(0),  and thus requires an int instead of a char.
+- when options are finished, C version returns -1 instead of char(0),  and thus stupidly requires an int instead of a char.
 - does not support optreset
 - does not support "--" as last argument
 - if no argument, optarg is blank, not NULL
@@ -143,12 +141,14 @@ Refer example code above for details.
 - does not support longindex
 - knows the length of longopts, so does not need an empty last record
 
-## 
+## Changelog 
+
 | Version | Description                                                                                                            |
 | ------- | ---------------------------------------------------------------------------------------------------------------------- |
 | 0.9.0   | Almost finished. Equal sign recognition in longoption (logopt=arg) is missing for v1.0                                 |
 | 1.0.0   | Added support for equal sign (=) in long options, like --beta=2.0. Error messages are displayed on stderr (not stdout) |
 | 1.0.1   | Longopt bug fixed and refactoring.                                      |
+| 1.0.2   | Bug in README.md fixed                                                  |
 
 ## License
 
