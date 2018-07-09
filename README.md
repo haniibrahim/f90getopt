@@ -149,6 +149,7 @@ Refer example code above for details.
 | 1.0.0   | Added support for equal sign (=) in long options, like --beta=2.0. Error messages are displayed on stderr (not stdout) |
 | 1.0.1   | Longopt bug fixed and refactoring.                                      |
 | 1.0.2   | Bug in README.md fixed                                                  |
+|1.0.3    | Bug in README.md (sample code section) fixed |
 
 ## License
 
