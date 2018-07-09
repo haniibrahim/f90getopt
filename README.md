@@ -48,7 +48,7 @@ program f90getopt_sample
             case( 'a' )
                 print *, 'option alpha/a'
             case( 'b' )
-                print *, 'option beta/b=', optval
+                print *, 'option beta/b=', optarg
             case( 'h' )
                 print *, 'help-screen'
         end select
