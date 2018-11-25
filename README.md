@@ -104,7 +104,7 @@ ranlib libf90getopt.a
 You will get a static libray called ```libf90getopt.a``` and a module file ```f90getopt.mod```. Move the a-file on UNIX(-like) systems to ```/usr/local/lib``` and the mod-file to ```/usr/local/include```: 
 
 ```
-sudo cp ./libf90getopt.F90 /usr/local/lib/
+sudo cp ./libf90getopt.a /usr/local/lib/
 sudo cp ./f90getopt.mod /usr/local/include/
 ```
 
