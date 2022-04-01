@@ -1,6 +1,54 @@
-module f90getopt
+! This program is free software: you can redistribute it and/or modify
+! it under the terms of the GNU General Public License as published by
+! the Free Software Foundation, either version 3 of the License, or
+! (at your option) any later version.
+!
+! This program is distributed in the hope that it will be useful,
+! but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+! GNU General Public License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-    implicit none
+module f90getopt
+!
+! ================== Prologue =====================================================================================================
+!
+! Purpose:
+!    getopt()- and getopt_long()-like functionality (similar to the
+!    -functions) for Fortran 2003.
+!
+!
+! History:
+!    Version   Programmer         Date       Description
+!    -------   ----------         ---------- -----------
+!    0.8.0     Mark Gates         2014/04/27 Original code from Gates
+!    0.9.0     Hani Ibrahim       2014/04/28 Removed non-standard CLI-functions and added standard F2K CLI-functions
+!    1.0.0     Hani Ibrahim       2017/01/07 Parse "=" with long options, error messages to stderr not stdout
+!    1.0.1     Hani Ibrahim       2017/09/10 longopt bug fixed
+!    1.0.2     Hani Ibrahim       2017/09/29 Readme.md error fixed
+!    1.0.3     Hani Ibrahim       2018/07/09 Several errors in Readme.md fixed
+!    1.0.4     Hani Ibrahim       2022/03/31 Portable declaration of stdin/out/err fixed, refactoring, documentation
+!
+!
+! User routines:
+!    getopt
+!
+! Global variables/types
+!    option_s
+!
+! Special requirements:
+!    Fortran 2003 compiler
+!
+! ------------------ Use Module / Include files -----------------------------------------------------------------------------------
+!
+! ------------------ Implicit -----------------------------------------------------------------------------------------------------
+   IMPLICIT NONE
+! ------------------ Local declarations -------------------------------------------------------------------------------------------
+   PUBLIC  :: getopt, option_s, optarg
+   PRIVATE ! all other are private (hidden)
+! ------------------ Constant declarations ----------------------------------------------------------------------------------------
 
     ! Portable declaration of stderr, stdin, stdout
 #ifdef f2003
@@ -13,10 +61,10 @@ use, intrinsic :: iso_fortran_env, only : stdin=>input_unit, &
 #define stderr 0
 #endif
 
-    character(len=80):: optarg        ! Option's value
-    character        :: optopt        ! Option's character
-    integer          :: optind=1      ! Index of the next argument to process
-    logical          :: opterr=.true. ! Errors are printed by default. Set opterr=.false. to suppress them
+    character(len=80)     :: optarg        ! Option's value
+    character             :: optopt        ! Option's character
+    integer               :: optind=1      ! Index of the next argument to process
+    logical               :: opterr=.true. ! Errors are printed by default. Set opterr=.false. to suppress them
 
     type option_s
         character(len=80) :: name     ! Name of the option
@@ -30,18 +78,20 @@ use, intrinsic :: iso_fortran_env, only : stdin=>input_unit, &
 contains
 
     ! ----------------------------------------
+
+    character function substr( str, i, j )
     ! Return str(i:j) if 1 <= i <= j <= len(str),
     ! else return empty string.
+    !
     ! This is needed because Fortran standard allows but doesn't *require* short-circuited
     ! logical AND and OR operators. So this sometimes fails:
     !     if ( i < len(str) .and. str(i+1:i+1) == ':' ) then
     ! but this works:
     !     if ( substr(str, i+1, i+1) == ':' ) then
 
-    character function substr( str, i, j )
         ! arguments
-        character(len=*), intent(in):: str
-        integer, intent(in):: i, j
+        character(len=*), intent(in) :: str
+        integer, intent(in)          :: i, j
 
         if ( 1 <= i .and. i <= j .and. j <= len(str)) then
             substr = str(i:j)
@@ -52,13 +102,16 @@ contains
 
 
     ! ----------------------------------------
+
     character function getopt( optstring, longopts )
+    ! Returns short option character & value (if applicable) of all arguments one by one
+
         ! arguments
-        character(len=*), intent(in):: optstring
-        type(option_s),   intent(in), optional:: longopts(:)
+        character(len=*), intent(in)           :: optstring
+        type(option_s),   intent(in), optional :: longopts(:)
 
         ! local variables
-        character(len=80):: arg
+        character(len=80)                      :: arg
 
         optarg = ''
         if ( optind > command_argument_count()) then
@@ -77,16 +130,19 @@ contains
 
 
     ! ----------------------------------------
+
     character function process_long( longopts, arg )
+    ! Process long options
+
         ! arguments
-        type(option_s),   intent(in):: longopts(:)
-        character(len=*), intent(in):: arg
+        type(option_s),   intent(in) :: longopts(:)
+        character(len=*), intent(in) :: arg
 
         ! local variables
-        integer :: i = 0
-        integer :: j = 0
-        integer :: len_arg = 0             ! length of arg
-        logical :: has_equalsign = .false. ! arg contains equal sign?
+        integer                      :: i = 0
+        integer                      :: j = 0
+        integer                      :: len_arg = 0             ! length of arg
+        logical                      :: has_equalsign = .false. ! arg contains equal sign?
 
         len_arg = len_trim(arg)
 
@@ -144,12 +200,15 @@ contains
 
 
     ! ----------------------------------------
+
     character function process_short( optstring, arg )
+    ! Process short options
+
         ! arguments
-        character(len=*), intent(in):: optstring, arg
+        character(len=*), intent(in) :: optstring, arg
 
         ! local variables
-        integer:: i, arglen
+        integer                      :: i, arglen
 
         arglen = len( trim( arg ))
         optopt = arg(grpind:grpind)
@@ -157,7 +216,7 @@ contains
 
         i = index( optstring, optopt )
         if ( i == 0 ) then
-            ! unrecognized option
+            ! unrecognised option
             process_short = '?'
             if ( opterr ) then
                 write(stderr, '(a,a,a)') "ERROR: Unrecognized option '-", optopt, "'"
@@ -179,10 +238,10 @@ contains
             endif
             grpind = 2
         elseif ( arglen > grpind ) then
-            ! no argument (or unrecognized), go to next option in argument (-xyz)
+            ! no argument (or unrecognised), go to next option in argument (-xyz)
             grpind = grpind + 1
         else
-            ! no argument (or unrecognized), go to next argument
+            ! no argument (or unrecognised), go to next argument
             grpind = 2
             optind = optind + 1
         endif
