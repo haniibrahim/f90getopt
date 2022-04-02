@@ -2,7 +2,7 @@
 
 getopt()- and getopt_long()-like functionality (similar to the C-functions) for modern Fortran 90/2003 or higher. Based on sources from [Mark Gates](http://lagrange.mechse.illinois.edu/mwest/partmc/partmc-2.2.1/src/getopt.F90).
 
-*f90getopt* is developed as an easy to learn and compact library in just one source file. The `f90getopt.F90` file can just be added to existing source directories and deployed with them without producing dependencies. You can "learn" f90getopt in minutes and therefore it is even suitable for very small projects or "throw-away-code". It follows the GNU and POSIX command-line argument standards.
+*f90getopt* is developed as an easy to learn and compact library in just one source file. The `f90getopt.F90` file can just be added to existing source directories and deployed with them without dealing with dependencies. You can "learn" f90getopt in minutes and therefore it is even suitable for very small projects or "throw-away-code". It follows the GNU and POSIX command-line argument standards.
 
 * [Purpose](#Purpose)
 * [Features](#Features)
@@ -21,10 +21,11 @@ Parsing command-line options and arguments (GNU & POSIX) like:
 
 ## Features
 
-  * Easy to learn (in minutes), only [3 user-functions/variables](https://github.com/haniibrahim/f90getopt/wiki/Table-of-user-functions-and-global-variables)
+  * Easy to learn (in minutes) by just looking at the [sample program](#Example).
   * Easy to add to your project, just one file
   * GNU and POSIX standard compatible
-  * Standard Fortran 2003
+  * Standard Fortran 2003 and cross-platform
+  * [Wiki](https://github.com/haniibrahim/f90getopt/wiki)
 
 Parsing features:
 
@@ -53,7 +54,7 @@ program f90getopt_sample
     ! ----------------------------------
     ! option_s derived type:
     !   1st value = long option name (character array, max. 80)
-    !   2nd value = if option has value (logical)
+    !   2nd value = if option has an argument (logical)
     !   3rd value = short option name (single character), same as in getopt()
     ! option_s is not needed if you just use short options
     type(option_s) :: opts(3)
@@ -75,17 +76,17 @@ program f90getopt_sample
     ! Process short options one by one and long options if specified in option_s
     !
     ! getopt(optstr, longopt):
-    !  - optstr  = character of short option character without a space
-    !              ":" after a character says that this option requires a value
-    !  - longopt = opts, if specified in option_s (optional)
+    !  - optstr  = character array of short option characters without a space
+    !              colon ":" after a character says that this option requires an argument
+    !  - longopt = long option declaration, if specified in option_s (optional)
     do
         select case(getopt("ab:h", opts))
-            case(char(0))
+            case(char(0)) ! When all options are processed
                 exit
             case("a")
                 print*, "option alpha/a"
             case("b")
-                print*, "option beta/b=",  trim(optarg) ! "trim" is quite useful to avoid trailing spaces
+                print*, "option beta/b=",  trim(optarg) ! "trim" is quite useful to avoid trailing blanks
             case("h")
                 print*, "help-screen"
         end select
