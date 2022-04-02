@@ -1,9 +1,0 @@
-.gitignore
-/obj/
-/bin/
-f90getopt.cbp
-f90getopt.depend
-f90getopt.layout
-Makefile
-.DS_Store/
-

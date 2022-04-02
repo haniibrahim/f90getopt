@@ -1,8 +1,8 @@
 # f90getopt [![Status](https://img.shields.io/badge/status-stable-brightgreen.svg)]()
 
-getopt()- and getopt_long()-like functionality (similar to the C-functions) for Fortran 90/2003 or higher. Based on sources from [Mark Gates](http://lagrange.mechse.illinois.edu/mwest/partmc/partmc-2.2.1/src/getopt.F90).
+getopt()- and getopt_long()-like functionality (similar to the C-functions) for modern Fortran 90/2003 or higher. Based on sources from [Mark Gates](http://lagrange.mechse.illinois.edu/mwest/partmc/partmc-2.2.1/src/getopt.F90).
 
-*f90getopt* is developed as an easy to learn and compact library in one source file. The `f90getopt.F90` file can just be added to existing sources and deployed with them without producing dependencies. You can "learn" f90getopt in minutes and therefore it is even suitable for very small projects or "throw-away-code".
+*f90getopt* is developed as an easy to learn and compact library in just one source file. The `f90getopt.F90` file can just be added to existing source directories and deployed with them without producing dependencies. You can "learn" f90getopt in minutes and therefore it is even suitable for very small projects or "throw-away-code". It follows the GNU and POSIX command-line argument standards.
 
 * [Purpose](#Purpose)
 * [Features](#Features)
@@ -10,27 +10,29 @@ getopt()- and getopt_long()-like functionality (similar to the C-functions) for 
 * [Example](#Example)
    * [Build the sample program](#Build-the-sample-program)
    * [Run the sample program](#Run-the-sample-program)
-* [Compile and link to static library](#Compile-and-link-to-static-library)
-* [Userfunctions and Variables](#Userfunctions-and-Variables)
-* [Differences](#Differences)
-   * [From C version](#From-C-version)
-   * [For long options](#For-long-options)
 * [Changelog](#Changelog)
 * [License](#License)
 
 ## Purpose
 
-Parsing command-line options and arguments like:
+Parsing command-line options and arguments (GNU & POSIX) like:
 
    <pre>myapp -xv --longarg --arg=5.0 -p 9</pre>
 
 ## Features
 
-  * Short option without argument (e.g.: -x)
-  * Short option with argument (e.g.: -p 9 or -p9)
-  * Short options w/o arguments can be embraced (e.g.: -xv)
-  * Long option w/o argument (e.g: --longarg)
-  * Long option w/ argument (e.g.: --arg 5.0 or --arg=5.0)
+  * Easy to learn (in minutes), only [3 user-functions/variables](https://github.com/haniibrahim/f90getopt/wiki/Table-of-user-functions-and-global-variables)
+  * Easy to add to your project, just one file
+  * GNU and POSIX standard compatible
+  * Standard Fortran 2003
+
+Parsing features:
+
+  * Parse short options without argument (e.g.: -x)
+  * Parse short options with argument (e.g.: -p 9 or -p9)
+  * Parse short options without argumentss and they can be embraced (e.g.: -xv)
+  * Parse long option without argument (e.g: --longarg)
+  * Parse long option with argument (e.g.: --arg 5.0 or --arg=5.0)
 
 ## Requirements
 
@@ -38,7 +40,7 @@ Fortran 2003 or Fortran 90 compiler which offers Fortran 2003 features *command_
 
 ## Example
 
-This is a full working example and it make use of long and short options. It is well documented and should answer most questions. If you need further information, refer the [Wiki page](https://github.com/haniibrahim/f90getopt/wiki)
+This is a full working example and it make use of long and short options. It is well documented and should answer most questions without referring a manual. If you need further information, go to the [Wiki page](https://github.com/haniibrahim/f90getopt/wiki).
 
 ```
 program f90getopt_sample
@@ -51,7 +53,7 @@ program f90getopt_sample
     ! ----------------------------------
     ! option_s derived type:
     !   1st value = long option name (character array, max. 80)
-    !   2nd value = if option has value (boolean)
+    !   2nd value = if option has value (logical)
     !   3rd value = short option name (single character), same as in getopt()
     ! option_s is not needed if you just use short options
     type(option_s) :: opts(3)
@@ -73,9 +75,9 @@ program f90getopt_sample
     ! Process short options one by one and long options if specified in option_s
     !
     ! getopt(optstr, longopt):
-    !  - optstr = character of short option character without a space
-    !             ":" after a character says that this option requires a value
-    !  - opts   = longopts, if specified in option_s (optional)
+    !  - optstr  = character of short option character without a space
+    !              ":" after a character says that this option requires a value
+    !  - longopt = opts, if specified in option_s (optional)
     do
         select case(getopt("ab:h", opts))
             case(char(0))
@@ -127,62 +129,6 @@ Output is:
  option alpha/a
  option beta/b=23.2
 ```
-
-## Compile and link to static library
-
-To avoid copying the source file `f90getopt.F90` to your working directory everytime you want to use their features, it make sense to create a static library. After, you just need to link the library to your project. To do this follow the steps below:
-
-Change to the directory where the `f90getopt.F90` is located and type:
-
-```
-gfortran -c f90getopt.F90
-ar cr libf90getopt.a f90getopt.o
-ranlib libf90getopt.a
-```
-
-You will get a static libray called `libf90getopt.a` and a module file `f90getopt.mod`. Move the a-file on UNIX(-like) systems to `/usr/local/lib` and the mod-file to `/usr/local/include`:
-
-```
-sudo cp ./libf90getopt.a /usr/local/lib/
-sudo cp ./f90getopt.mod /usr/local/include/
-```
-
-On Windows go to the appropriate directory of your compiler-system. MinGW and Cygwin are similar to UNIX. Integrated Development Environments (IDE) have their own rules. Refer the manual of your IDE.
-
-To compile and link the sample program with the libray can be done on Unices with:
-
-```
-gfortran -o f90getopt_sample f90getopt_sample.f90 -I/usr/local/include -lf90getopt
-```
-
-Change paths to match the right ones on Windows.
-
-## Userfunctions and Variables
-
-| Type            | Name                                 | Brief Description                                                                                                  |
-| --------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
-| Function        | getopt(shortopts-string, [longopts]) | Returns short option character & value (if applicable) of all arguments one by one                                 |
-| Derived Type    | option_s(longopt, value, shortopt)   | Contains the option's long name, if value is required and option's short (character)                               |
-
-Refer example code above for details.
-
-## Differences
-
-### From C version
-
-- when options are finished, C version returns -1 instead of char(0),  and thus stupidly requires an int instead of a char.
-- does not support optreset
-- does not support "--" as last argument
-- if no argument, optarg is blank, not NULL
-- argc and argv are implicit
-
-### For long options
-
-- optional argument to getopt(), rather than separate function getopt_long()
-- has_arg is logical, and does not support optional_argument
-- does not support flag field (and thus always returns val)
-- does not support longindex
-- knows the length of longopts, so does not need an empty last record
 
 ## Changelog
 
