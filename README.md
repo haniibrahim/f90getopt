@@ -42,7 +42,7 @@ Fortran 2003 or Fortran 90 compiler which offers Fortran 2003 features *command_
 
 This is a full working example and it make use of long and short options. It is well documented and should answer most questions without referring a manual. If you need further information, go to the [Wiki page](https://github.com/haniibrahim/f90getopt/wiki).
 
-```
+```f90
 program f90getopt_sample
     ! Sample program for f90getopt function
 
