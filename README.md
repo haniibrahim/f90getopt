@@ -34,6 +34,7 @@ Parsing features:
   * Parse short options without argumentss and they can be embraced (e.g.: -xv)
   * Parse long option without argument (e.g: --longarg)
   * Parse long option with argument (e.g.: --arg 5.0 or --arg=5.0)
+  * ***NEW*** Utility function checking numbers in option's arguments
 
 ## Requirements
 
@@ -104,9 +105,7 @@ Put `f90getopt.f90` and your sample program from above (let's say `f90getopt_sam
 gfortran f90getopt.F90 f90getopt_sample.f90 -o f90getopt_sample
 ```
 
-(you can omit `.exe` in `-o f90getopt_sample` on Windows)
-
-to compile it.
+(you can omit `.exe` in `-o f90getopt_sample` on Windows) to compile it. Be advised that the capital F90 in the file extention of f90getopt is mandatory.
 
 ### Run the sample program
 
@@ -131,6 +130,8 @@ Output is:
  option beta/b=23.2
 ```
 
+A complete sample program with all features is provided in the [Wiki](https://github.com/haniibrahim/f90getopt/wiki/Full-working-example)
+
 ## Changelog
 
 | Version | Description                                                                                                            |
@@ -141,6 +142,7 @@ Output is:
 | 1.0.2   | Bug in README.md fixed                                                                                                 |
 | 1.0.3   | Bug in README.md (sample code section) fixed                                                                           |
 | 1.0.4   | Portable declaration of stdin/out/err fixed, minor refactoring and documentation, => GPL 3.0, Wiki page                |
+| 1.1.0   | New utility function "isnum()" checks for numbers in option's arguments, More sophisticated sample program in the Wiki |
 
 ## License
 

@@ -46,7 +46,7 @@ module f90getopt
 ! ------------------ Implicit -----------------------------------------------------------------------------------------------------
    IMPLICIT NONE
 ! ------------------ Local declarations -------------------------------------------------------------------------------------------
-   PUBLIC  :: getopt, option_s, optarg
+   PUBLIC  :: getopt, option_s, optarg, isnum
    PRIVATE ! all other are private (hidden)
 ! ------------------ Constant declarations ----------------------------------------------------------------------------------------
 
@@ -246,5 +246,102 @@ contains
             optind = optind + 1
         endif
     end function process_short
+
+    ! ----------------------------------------
+    ! Utility function(s)
+    ! ----------------------------------------
+
+    integer function isnum (txtval)
+    ! Verify whether a character string represents a numerical value
+    !
+    ! Can be used to check "optarg" for numbers. Can distinguish
+    ! integer, real/double and character strings:
+    !
+    ! isnum = 0 => txtval is a string
+    ! isnum = 1 => txtval is a integer
+    ! isnum > 1 => txtval is a real/double
+
+        character(len=*), intent(in) :: txtval
+
+        ! Declaration local constants
+        integer, parameter :: CINT  = 1 ! when txtval contains integer
+        integer, parameter :: CREAL = 2 ! when txtval contains real
+        integer, parameter :: CREXP = 3 ! when txtval contains real (exponential)
+
+        ! Declaration local variables
+        integer :: num       ! numerical indicator variable, if > 0 (0 >= num >= CREXP)
+        logical :: isint     ! integer indicator, if .true.
+        logical :: isexp     ! real with exponent indicator, if .true.
+        logical :: issign    ! sign (+/-) indicator, if .true.
+        logical :: issignexp ! sign (+/-) indicator for exponents, if .true.
+        logical :: isblank   ! indicator for blanks between characters
+        integer :: i         ! control variable (index), max. len(txtvar)
+
+        ! Initialize local variables
+        num       = 0
+        isint     = .false.
+        isexp     = .false.
+        issign    = .false.
+        issignexp = .false.
+        isblank   = .false.
+        i         = 0
+
+        ! loop over characters
+        do
+            if (i >= len(txtval)) then
+            ! last check
+                if (isint .eqv. .false.) exit
+                if (num >= CREXP .AND. (isexp .eqv. .false.)) exit
+                isnum = num
+                return
+            end if
+
+            i = i + 1
+
+            select case (txtval(i:i))
+                ! process blanks
+                case (' ')
+                    if (num == 0 .and. (isblank .eqv. .false.)) then ! preceding or trailing blanks
+                        continue
+                    else if (num /= 0) then ! blank after sign or number
+                        isblank = .true.
+                    end if
+                ! process digits
+                case ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9')
+                    if (num == 0) num = CINT ! first number
+                    if (num < CREXP) then ! no exponent number
+                        isint = .true.
+                    else ! exponent number
+                        isexp = .true.
+                    end if
+                    if (isblank .eqv. .true.) exit ! if blanks are in the middle => string
+                ! process signs
+                case ('+', '-')
+                    if (num == 0) then ! sign of number
+                        if (issign .eqv. .true.) exit ! second sign without number => string
+                        issign = .true.
+                        num = CINT
+                    else ! sign of exponent
+                        if (num < CREXP) exit
+                        if (issignexp .eqv. .true.) exit
+                        issignexp = .true.
+                    end if
+                ! process decimal point
+                case ('.')
+                    if (num /= CINT .AND. i /= 1) exit
+                    num = CREAL
+                ! process exponent
+                case ('e', 'E', 'd', 'D')
+                    if (num >= CREXP) exit
+                    if (isint .eqv. .false.) exit
+                    num = CREXP
+                case DEFAULT ! any other character means the string is non-numeric
+                    exit
+            end SELECT
+        end DO
+
+        isnum = 0 ! if this point is reached, the string is non-numeric
+        RETURN
+    end function isnum
 
 end module f90getopt
