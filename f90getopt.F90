@@ -30,16 +30,16 @@ module f90getopt
 !    1.0.2     Hani Ibrahim       2017/09/29 Readme.md error fixed
 !    1.0.3     Hani Ibrahim       2018/07/09 Several errors in Readme.md fixed
 !    1.0.4     Hani Ibrahim       2022/03/31 Portable declaration of stdin/out/err fixed, refactoring, documentation
-!
+!    1.1.0     Hani Ibrahim       2022/04/10 Utility function "isnum()" added
 !
 ! User routines:
-!    getopt
+!    getopt, isnum
 !
 ! Global variables/types
-!    option_s
+!    option_s, optarg
 !
 ! Special requirements:
-!    Fortran 2003 compiler
+!    Fortran 2003 compliant compiler
 !
 ! ------------------ Use Module / Include files -----------------------------------------------------------------------------------
 !
@@ -50,14 +50,10 @@ module f90getopt
    PRIVATE ! all other are private (hidden)
 ! ------------------ Constant declarations ----------------------------------------------------------------------------------------
 
-    ! Portable declaration of stderr, stdin, stdout
+    ! Portable declaration of stderr
 #ifdef f2003
-use, intrinsic :: iso_fortran_env, only : stdin=>input_unit, &
-                                          stdout=>output_unit, &
-                                          stderr=>error_unit
+use, intrinsic :: iso_fortran_env, only : stderr=>error_unit
 #else
-#define stdin  5
-#define stdout 6
 #define stderr 0
 #endif
 
@@ -290,8 +286,8 @@ contains
         do
             if (i >= len(txtval)) then
             ! last check
-                if (isint .eqv. .false.) exit
-                if (num >= CREXP .AND. (isexp .eqv. .false.)) exit
+                if (.not. isint) exit
+                if (num >= CREXP .and. (.not. isexp)) exit
                 isnum = num
                 return
             end if
@@ -301,47 +297,47 @@ contains
             select case (txtval(i:i))
                 ! process blanks
                 case (' ')
-                    if (num == 0 .and. (isblank .eqv. .false.)) then ! preceding or trailing blanks
+                    if (num == 0 .and. (.not. isblank)) then ! preceding or trailing blanks
                         continue
-                    else if (num /= 0) then ! blank after sign or number
+                    else if (num /= 0) then ! blank after sign or digit
                         isblank = .true.
                     end if
                 ! process digits
                 case ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9')
-                    if (num == 0) num = CINT ! first number
+                    if (num == 0) num = CINT ! first digit
                     if (num < CREXP) then ! no exponent number
                         isint = .true.
                     else ! exponent number
                         isexp = .true.
                     end if
-                    if (isblank .eqv. .true.) exit ! if blanks are in the middle => string
+                    if (isblank) exit ! if blanks are in the middle => string
                 ! process signs
                 case ('+', '-')
                     if (num == 0) then ! sign of number
-                        if (issign .eqv. .true.) exit ! second sign without number => string
+                        if (issign) exit ! second sign without digit => string
                         issign = .true.
                         num = CINT
                     else ! sign of exponent
                         if (num < CREXP) exit
-                        if (issignexp .eqv. .true.) exit
+                        if (issignexp) exit
                         issignexp = .true.
                     end if
                 ! process decimal point
                 case ('.')
-                    if (num /= CINT .AND. i /= 1) exit
+                    if (num /= CINT .and. i /= 1) exit
                     num = CREAL
                 ! process exponent
                 case ('e', 'E', 'd', 'D')
                     if (num >= CREXP) exit
-                    if (isint .eqv. .false.) exit
+                    if (.not. isint) exit
                     num = CREXP
-                case DEFAULT ! any other character means the string is non-numeric
+                case default ! any other character means the string is non-numeric
                     exit
-            end SELECT
-        end DO
+            end select
+        end do
 
         isnum = 0 ! if this point is reached, the string is non-numeric
-        RETURN
+        return
     end function isnum
 
 end module f90getopt

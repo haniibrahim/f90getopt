@@ -2,7 +2,7 @@
 
 getopt()- and getopt_long()-like functionality (similar to the C-functions) for modern Fortran 90/2003 or higher. Based on sources from [Mark Gates](http://lagrange.mechse.illinois.edu/mwest/partmc/partmc-2.2.1/src/getopt.F90).
 
-*f90getopt* is developed as an easy to learn and compact library in just one source file. The `f90getopt.F90` file can just be added to existing source directories and deployed with them without dealing with dependencies. You can "learn" f90getopt in minutes and therefore it is even suitable for very small projects or "throw-away-code". It follows the GNU and POSIX command-line argument standards.
+*f90getopt* is developed as an easy to learn and compact library in just one source file. The `f90getopt.F90` file can just be added to existing source directories and deployed with them. There is no hassle with library dependencies. You can "learn" f90getopt in minutes and therefore it is even suitable for very small projects or "throw-away-code". It follows the GNU and POSIX command-line argument standards.
 
 * [Purpose](#Purpose)
 * [Features](#Features)
@@ -22,19 +22,19 @@ Parsing command-line options and arguments (GNU & POSIX) like:
 ## Features
 
   * Easy to learn (in minutes) by just looking at the [sample program](#Example).
-  * Easy to add to your project, just one file
-  * GNU and POSIX standard compatible
+  * Easy to add to your project, just one module
+  * GNU and POSIX standard compliant
   * Standard Fortran 2003 and cross-platform
   * [Wiki](https://github.com/haniibrahim/f90getopt/wiki)
 
 Parsing features:
 
-  * Parse short options without argument (e.g.: -x)
-  * Parse short options with argument (e.g.: -p 9 or -p9)
-  * Parse short options without argumentss and they can be embraced (e.g.: -xv)
-  * Parse long option without argument (e.g: --longarg)
-  * Parse long option with argument (e.g.: --arg 5.0 or --arg=5.0)
-  * ***NEW*** Utility function checking numbers in option's arguments
+  * Parse short options without arguments (e.g.: -x)
+  * Parse short options with arguments (e.g.: -p 9 or -p9)
+  * Parse short options without arguments and they can be embraced (e.g.: -xv)
+  * Parse long options without arguments (e.g: --longarg)
+  * Parse long options with arguments (e.g.: --arg 5.0 or --arg=5.0)
+  * ***NEW*** Check function for numbers (integer, real/double) in the arguments 
 
 ## Requirements
 
@@ -42,7 +42,7 @@ Fortran 2003 or Fortran 90 compiler which offers Fortran 2003 features *command_
 
 ## Example
 
-This is a full working example and it make use of long and short options. It is well documented and should answer most questions without referring a manual. If you need further information, go to the [Wiki page](https://github.com/haniibrahim/f90getopt/wiki).
+This is a full working example and it make use of long and short options. It is well documented and should answer most questions without referring a manual. If you need further information, go to the [Wiki](https://github.com/haniibrahim/f90getopt/wiki).
 
 ```f90
 program f90getopt_sample
