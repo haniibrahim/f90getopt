@@ -50,6 +50,9 @@ program f90getopt_sample
 
     use f90getopt
     implicit none
+    
+    ! local variables
+    character(len=1) :: short ! getopt-character
 
     ! START for longopts only (optional)
     ! ----------------------------------
@@ -81,7 +84,8 @@ program f90getopt_sample
     !              colon ":" after a character says that this option requires an argument
     !  - longopt = long option declaration, if specified in option_s (optional)
     do
-        select case(getopt("ab:h", opts))
+        short = getopt("ab:h", opts) ! Separate getopt-character for ifort compatibility 
+        select case(short)
             case(char(0)) ! When all options are processed
                 exit
             case("a")
