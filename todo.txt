@@ -1,0 +1,25 @@
+* Fehler wenn short- oder longopt kein Wert hat (--output), keine Fehlermeldung,
+  stattessen wird nachfolgender opt als Wert fehlinterpretiert.
+.\test.exe --zeta 5.23 --output --alpha
+ ZETA => 5.23
+.\test.exe --zeta 5.23 -o --alpha
+ ZETA => 5.23
+ Output file:--alpha
+.\test.exe --zeta 5.23 -oh --alpha
+ ZETA => 5.23
+ Output file:h
+ ALPHA triggered
+.\test.exe --zeta 5.23 -ho --alpha
+ ZETA => 5.23
+ Help selected
+ Output file:--alpha
+.\test.exe --zeta -ho --alpha
+ ZETA => -ho
+ ALPHA triggered
+ Output file:--alpha
+* Bei unbekannter shortopt wird zusätzlich "unknown option code" ausgegeben
+.\test.exe -l
+ERROR: Unrecognized option '-l'
+ Unknown option code          63
+* Anpassen an alte Samplesyntax 
+* "Has Short" gegen "" ersetzen.
