@@ -1,2 +1,2 @@
-* Anpassen an alte Samplesyntax 
-* "Has Short" gegen "" ersetzen.
+* Komfortablere als CHAR(128+x)
+

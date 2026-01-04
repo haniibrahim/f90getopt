@@ -17,7 +17,7 @@ type option_s
     character(len=80) :: name
     logical           :: has_arg
     character         :: short      ! shortopt char or char(0)
-    logical           :: has_short  ! .false. = longopt-only
+    ! logical           :: has_short  ! .false. = longopt-only
 end type option_s
 
 integer, private :: grpind = 2
@@ -59,13 +59,15 @@ character function getopt(optstring,longopts)
     elseif (arg(1:1)=="-") then
         getopt = process_short(optstring,arg)
     else
-        getopt = char(0)
+        write(stderr,'(a,a,a)') &
+        "ERROR: Unrecognized option '", arg(1:len_trim(arg)), "'"
+        stop
     endif
 end function getopt
 
 ! =====================================================================
-! Helper function to prevent misinterpretation of an option as an value
-! w/o interference problems of negativ values (-3)
+! Helper function to prevent misinterpretation of an option as a value
+! w/o causing problems w/ negativ numbers (e.g. -3)
 ! =====================================================================
 logical function looks_like_option(arg)
     character(len=*), intent(in) :: arg
@@ -96,7 +98,7 @@ logical function looks_like_option(arg)
 end function looks_like_option
 
 ! =====================================================================
-! process_long(): now supports longopt-only (.has_short = .false.)
+! Long options processor , like --opt
 ! =====================================================================
 character function process_long(longopts, arg)
     type(option_s),   intent(in) :: longopts(:)
@@ -127,7 +129,7 @@ character function process_long(longopts, arg)
         if (arg(3:len_arg) == trim(longopts(i)%name)) then
 
             ! return value
-            if (longopts(i)%has_short) then
+            if (longopts(i)%short /= "") then
                 optopt = longopts(i)%short
                 process_long = optopt
             else
@@ -176,10 +178,11 @@ character function process_long(longopts, arg)
     optopt = '?'
     write(stderr,'(a,a,a)') &
         "ERROR: Unrecognized option '", arg(1:len_arg), "'"
+        stop
 end function process_long
 
 ! -------------------------------------------------------------------------------------------------
-! Original shortopt processor (unchanged)
+! Short options processor , like -o
 ! -------------------------------------------------------------------------------------------------
 character function process_short(optstring, arg)
     character(len=*), intent(in) :: optstring, arg
@@ -198,6 +201,7 @@ character function process_short(optstring, arg)
         if (opterr) then
             write(stderr,'(a,a,a)') &
                 "ERROR: Unrecognized option '-", optopt, "'"
+                stop
         endif
     endif
 
@@ -214,7 +218,7 @@ character function process_short(optstring, arg)
             ! -x VALUE
             call get_command_argument(optind, optarg)
 
-            ! ---- FIX: reject next option as value ----
+            ! ---- Reject next option as value ----
             if (looks_like_option(optarg)) then
                 write(stderr,'(a,a,a)') &
                     "ERROR: Option '-", optopt, "' requires a value"
@@ -245,9 +249,17 @@ character function process_short(optstring, arg)
 end function process_short
 
 ! -------------------------------------------------------------------------------------------------
-! Numeric type detector (unchanged)
+! UTILITY-FUNCTIONS
 ! -------------------------------------------------------------------------------------------------
 integer function isnum(txtval)
+    ! Verify whether a character string represents a numerical value
+    !
+    ! Can be used to check "optarg" for numbers. Can distinguish
+    ! integer, real/double and character strings:
+    !
+    ! isnum = 0 => txtval is a string
+    ! isnum = 1 => txtval is a integer
+    ! isnum > 1 => txtval is a real/double
     character(len=*),intent(in)::txtval
     integer,parameter::CINT=1,CREAL=2,CREXP=3
     integer::num,i

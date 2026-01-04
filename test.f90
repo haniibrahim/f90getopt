@@ -14,17 +14,30 @@ character(len=*),parameter :: optshort = "ho:"
 ! longopts(3)%name="zeta";    longopts(3)%has_arg=.true.;  longopts(3)%short=char(0); longopts(3)%has_short=.false.
 ! longopts(4)%name="alpha";   longopts(4)%has_arg=.false.; longopts(4)%short=char(0); longopts(4)%has_short=.false.
 
+! type(option_s) :: opts(4)
+! ! longopts initialisieren
+! opts(1) = option_s("help",    .false., "h", .true.)
+! opts(2) = option_s("output",  .true.,  "o", .true.)
+! ! ---- longopt-only Optionen ----
+! opts(3) = option_s("zeta",    .true.,  "", .false.)
+! opts(4) = option_s("alpha",   .false., "", .false.)
+
 type(option_s) :: opts(4)
 ! longopts initialisieren
-opts(1) = option_s("help",    .false., "h", .true.)
-opts(2) = option_s("output",  .true.,  "o", .true.)
+opts(1) = option_s("help",    .false., "h")
+opts(2) = option_s("output",  .true.,  "o")
 ! ---- longopt-only Optionen ----
-opts(3) = option_s("zeta",    .true.,  "", .false.)
-opts(4) = option_s("alpha",   .false., "", .false.)
+opts(3) = option_s("zeta",    .true.,  "")
+opts(4) = option_s("alpha",   .false., "")
 
 
+! If no options were committed
+    ! ----------------------------
+    if (command_argument_count() .eq. 0) then
+      print*, "ERROR: Program has options: -a. --alpha -b x --beta=x --beta x"
+    end if
 
-optind = 1
+! optind = 1
 do
     c = getopt(optshort,opts)
     if (c == char(0)) exit
@@ -43,7 +56,7 @@ do
     case(char(128+4))  ! corresponds to longopts(4)
         print *,"ALPHA triggered"
 
-    ! case default
+    ! ! case default
     !     print *,"Unknown option code",iachar(c)
     end select
 enddo
