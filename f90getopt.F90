@@ -37,19 +37,6 @@ character function substr(str,i,j)
     end if
 end function substr
 
-! -------------------------------------------------------------------------------------------------
-! New: detect "bare" longopts (zeta, zeta=3.5, zeta 3.5)
-! -------------------------------------------------------------------------------------------------
-! logical function is_bare_long(arg)
-    ! character(len=*),intent(in)::arg
-    ! is_bare_long = .false.
-    ! if (arg(1:1) == '-') return
-    ! if (len_trim(arg) == 0) return
-    ! ! must start with a letter
-    ! if (arg(1:1) >= 'A' .and. arg(1:1) <= 'Z') is_bare_long = .true.
-    ! if (arg(1:1) >= 'a' .and. arg(1:1) <= 'z') is_bare_long = .true.
-! end function is_bare_long
-
 ! =====================================================================
 ! getopt()
 ! =====================================================================
@@ -76,152 +63,184 @@ character function getopt(optstring,longopts)
     endif
 end function getopt
 
-! -------------------------------------------------------------------------------------------------
-! New: process "bare" longopts
-! -------------------------------------------------------------------------------------------------
-! character function process_bare_long(longopts,arg)
-    ! type(option_s),intent(in)::longopts(:)
-    ! character(len=*),intent(in)::arg
-    ! character(len=80)::tok,value
-    ! integer::i,pos
+! =====================================================================
+! Helper function to prevent misinterpretation of an option as an value
+! w/o interference problems of negativ values (-3)
+! =====================================================================
+logical function looks_like_option(arg)
+    character(len=*), intent(in) :: arg
 
-    ! process_bare_long = char(0)
+    if (len_trim(arg) == 0) then
+        looks_like_option = .false.
+        return
+    endif
 
-    ! pos = index(arg,"=")
-    ! if (pos > 0) then
-        ! tok = arg(1:pos-1)
-        ! value = arg(pos+1:)
-    ! else
-        ! tok = trim(arg)
-        ! value = ""
-    ! end if
+    ! starts with "--" → definitely option
+    if (arg(1:2) == "--") then
+        looks_like_option = .true.
+        return
+    endif
 
-    ! do i=1,size(longopts)
-        ! if (trim(tok) == trim(longopts(i)%name)) then
-            ! optopt = longopts(i)%short
-            ! process_bare_long = optopt
+    ! starts with "-" → could be number or option
+    if (arg(1:1) == "-") then
+        ! numeric values like -3, -1.2, -2e-3 are allowed
+        if (isnum(arg) > 0) then
+            looks_like_option = .false.
+        else
+            looks_like_option = .true.
+        endif
+        return
+    endif
 
-            ! if (.not. longopts(i)%has_arg) then
-                ! optind = optind + 1
-                ! return
-            ! endif
-
-            ! if (pos > 0) then
-                ! optarg = trim(value)
-                ! optind = optind + 1
-            ! else
-                ! if (optind+1 <= command_argument_count()) then
-                    ! call get_command_argument(optind+1,optarg)
-                    ! optind = optind + 2
-                ! else
-                    ! if (opterr) write(stderr,'(a,a,a)')"ERROR: Option '",trim(tok),"' needs a value."
-                    ! process_bare_long=char(0)
-                ! endif
-            ! endif
-            ! return
-        ! end if
-    ! end do
-
-    ! if (opterr) write(stderr,'(a,a,a)')"ERROR: Unknown option '",trim(arg),"'"
-! end function process_bare_long
+    looks_like_option = .false.
+end function looks_like_option
 
 ! =====================================================================
 ! process_long(): now supports longopt-only (.has_short = .false.)
 ! =====================================================================
-character function process_long(longopts,arg)
-    type(option_s),intent(in)::longopts(:)
-    character(len=*),intent(in)::arg
+character function process_long(longopts, arg)
+    type(option_s),   intent(in) :: longopts(:)
+    character(len=*), intent(in) :: arg
 
-    integer :: i,j,len_arg
-    logical :: has_equalsign
+    integer  :: i, j, len_arg
+    logical  :: has_equalsign
 
-    has_equalsign=.false.
-    len_arg=len_trim(arg)
+    process_long = char(0)
+    optarg = ''
 
-    do j=1,len_arg
-        if (arg(j:j) == "=") then
-            has_equalsign=.true.
-            len_arg=j-1
+    len_arg = len_trim(arg)
+    has_equalsign = .false.
+
+    ! detect '='
+    do j = 1, len_arg
+        if (arg(j:j) == '=') then
+            has_equalsign = .true.
+            len_arg = j - 1
             exit
         endif
     enddo
 
-    if (.not.has_equalsign) optind=optind+1
+    ! advance index if no "=value"
+    if (.not. has_equalsign) optind = optind + 1
 
-    do i=1,size(longopts)
-        if (arg(3:len_arg) == longopts(i)%name) then
+    do i = 1, size(longopts)
+        if (arg(3:len_arg) == trim(longopts(i)%name)) then
 
+            ! return value
             if (longopts(i)%has_short) then
                 optopt = longopts(i)%short
                 process_long = optopt
             else
-                ! -----------------------------------------
-                ! longopt-without-shortopt mapping
-                ! return pseudo-char = char(128+i)
-                ! -----------------------------------------
-                optopt = char(128+i)
+                optopt = char(128 + i)
                 process_long = optopt
             endif
 
-            ! argument handling identical to your version
+            ! handle argument if required
             if (longopts(i)%has_arg) then
+
                 if (has_equalsign) then
-                    call get_command_argument(optind,optarg)
-                    optarg = optarg(len_arg+2:)
+                    optarg = arg(len_arg+2:)
+                    if (len_trim(optarg) == 0) then
+                        write(stderr,'(a,a,a)') &
+                            "ERROR: Option '", trim(arg), "' requires a value"
+                        process_long = char(0)
+                    endif
                     optind = optind + 1
+
                 else
                     if (optind <= command_argument_count()) then
-                        call get_command_argument(optind,optarg)
+                        call get_command_argument(optind, optarg)
+
+                        ! ---- FIX: reject next option as value ----
+                        if (looks_like_option(optarg)) then
+                            write(stderr,'(a,a,a)') &
+                                "ERROR: Option '", trim(arg), "' requires a value"
+                            process_long = char(0)
+                            return
+                        endif
+
                         optind = optind + 1
                     else
-                        write(stderr,'(a,a,a)') "ERROR: Option '",trim(arg),"' requires a value"
+                        write(stderr,'(a,a,a)') &
+                            "ERROR: Option '", trim(arg), "' requires a value"
                         process_long = char(0)
                     endif
                 endif
             endif
+
             return
         endif
     enddo
 
-    process_long = char(0)
-    optopt='?'
-    write(stderr,'(a,a,a)')"ERROR: Unrecognized option '",arg(1:len_arg),"'"
+    ! unknown long option
+    optopt = '?'
+    write(stderr,'(a,a,a)') &
+        "ERROR: Unrecognized option '", arg(1:len_arg), "'"
 end function process_long
 
 ! -------------------------------------------------------------------------------------------------
 ! Original shortopt processor (unchanged)
 ! -------------------------------------------------------------------------------------------------
-character function process_short(optstring,arg)
-    character(len=*),intent(in)::optstring,arg
-    integer::i,arglen
+character function process_short(optstring, arg)
+    character(len=*), intent(in) :: optstring, arg
+    integer :: i, arglen
 
-    arglen=len(trim(arg))
-    optopt=arg(grpind:grpind)
-    process_short=optopt
+    arglen = len_trim(arg)
+    optarg = ''
 
-    i=index(optstring,optopt)
-    if (i==0) then
-        process_short='?'
-        if (opterr) write(stderr,'(a,a,a)')"ERROR: Unrecognized option '-",optopt,"'"
+    optopt = arg(grpind:grpind)
+    process_short = optopt
+
+    i = index(optstring, optopt)
+
+    if (i == 0) then
+        process_short = '?'
+        if (opterr) then
+            write(stderr,'(a,a,a)') &
+                "ERROR: Unrecognized option '-", optopt, "'"
+        endif
     endif
 
-    if (i>0 .and. substr(optstring,i+1,i+1)==":") then
-        optind=optind+1
-        if (arglen>grpind) then
-            optarg=arg(grpind+1:arglen)
-        elseif (optind<=command_argument_count()) then
-            call get_command_argument(optind,optarg)
-            optind=optind+1
+    ! option requires argument
+    if (i > 0 .and. substr(optstring, i+1, i+1) == ':') then
+
+        optind = optind + 1
+
+        if (arglen > grpind) then
+            ! -xVALUE
+            optarg = arg(grpind+1:arglen)
+
+        elseif (optind <= command_argument_count()) then
+            ! -x VALUE
+            call get_command_argument(optind, optarg)
+
+            ! ---- FIX: reject next option as value ----
+            if (looks_like_option(optarg)) then
+                write(stderr,'(a,a,a)') &
+                    "ERROR: Option '-", optopt, "' requires a value"
+                process_short = char(0)
+                return
+            endif
+
+            optind = optind + 1
+
         else
-            if (opterr) write(stderr,'(a,a,a)')"ERROR: Option '-",optopt,"' requires value"
-            process_short=char(0)
+            if (opterr) then
+                write(stderr,'(a,a,a)') &
+                    "ERROR: Option '-", optopt, "' requires a value"
+            endif
+            process_short = char(0)
         endif
-        grpind=2
-    elseif (arglen>grpind) then
-        grpind=grpind+1
+
+        grpind = 2
+
+    elseif (arglen > grpind) then
+        ! grouped short options: -xyz
+        grpind = grpind + 1
+
     else
-        grpind=2
-        optind=optind+1
+        grpind = 2
+        optind = optind + 1
     endif
 end function process_short
 
