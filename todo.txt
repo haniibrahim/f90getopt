@@ -1,2 +1,2 @@
-* Komfortablere als CHAR(128+x)
+
 

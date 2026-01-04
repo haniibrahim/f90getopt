@@ -1,6 +1,6 @@
 module f90getopt
 implicit none
-public :: getopt, option_s, optarg, isnum
+public :: getopt, option_s, optarg, LONG, isnum
 
 #ifdef f2003
 use, intrinsic :: iso_fortran_env, only : stderr=>error_unit
@@ -9,6 +9,7 @@ use, intrinsic :: iso_fortran_env, only : stderr=>error_unit
 #endif
 
 character(len=80) :: optarg
+integer, parameter:: LONG = 128
 character         :: optopt
 integer           :: optind = 1
 logical           :: opterr = .true.
@@ -23,19 +24,6 @@ end type option_s
 integer, private :: grpind = 2
 
 contains
-
-! -------------------------------------------------------------------------------------------------
-! Utility: safe substring
-! -------------------------------------------------------------------------------------------------
-character function substr(str,i,j)
-    character(len=*),intent(in)::str
-    integer,intent(in)::i,j
-    if (1<=i .and. i<=j .and. j<=len(str)) then
-        substr=str(i:j)
-    else
-        substr=''
-    end if
-end function substr
 
 ! =====================================================================
 ! getopt()
@@ -64,38 +52,6 @@ character function getopt(optstring,longopts)
         stop
     endif
 end function getopt
-
-! =====================================================================
-! Helper function to prevent misinterpretation of an option as a value
-! w/o causing problems w/ negativ numbers (e.g. -3)
-! =====================================================================
-logical function looks_like_option(arg)
-    character(len=*), intent(in) :: arg
-
-    if (len_trim(arg) == 0) then
-        looks_like_option = .false.
-        return
-    endif
-
-    ! starts with "--" → definitely option
-    if (arg(1:2) == "--") then
-        looks_like_option = .true.
-        return
-    endif
-
-    ! starts with "-" → could be number or option
-    if (arg(1:1) == "-") then
-        ! numeric values like -3, -1.2, -2e-3 are allowed
-        if (isnum(arg) > 0) then
-            looks_like_option = .false.
-        else
-            looks_like_option = .true.
-        endif
-        return
-    endif
-
-    looks_like_option = .false.
-end function looks_like_option
 
 ! =====================================================================
 ! Long options processor , like --opt
@@ -181,9 +137,9 @@ character function process_long(longopts, arg)
         stop
 end function process_long
 
-! -------------------------------------------------------------------------------------------------
+! =====================================================================
 ! Short options processor , like -o
-! -------------------------------------------------------------------------------------------------
+! =====================================================================
 character function process_short(optstring, arg)
     character(len=*), intent(in) :: optstring, arg
     integer :: i, arglen
@@ -248,9 +204,63 @@ character function process_short(optstring, arg)
     endif
 end function process_short
 
-! -------------------------------------------------------------------------------------------------
-! UTILITY-FUNCTIONS
-! -------------------------------------------------------------------------------------------------
+! =====================================================================
+! Utility: safe substring
+! =====================================================================
+character function substr(str,i,j)
+    ! Return str(i:j) if 1 <= i <= j <= len(str),
+    ! else return empty string.
+    !
+    ! This is needed because Fortran standard allows but doesn't *require* short-circuited
+    ! logical AND and OR operators. So this sometimes fails:
+    !     if ( i < len(str) .and. str(i+1:i+1) == ':' ) then
+    ! but this works:
+    !     if ( substr(str, i+1, i+1) == ':' ) then
+    character(len=*),intent(in)::str
+    integer,intent(in)::i,j
+    if (1<=i .and. i<=j .and. j<=len(str)) then
+        substr=str(i:j)
+    else
+        substr=''
+    end if
+end function substr
+
+! =====================================================================
+! Helper function to prevent misinterpretation of an option as a value
+! w/o causing problems w/ negativ numbers (e.g. -3)
+! =====================================================================
+logical function looks_like_option(arg)
+    character(len=*), intent(in) :: arg
+
+    if (len_trim(arg) == 0) then
+        looks_like_option = .false.
+        return
+    endif
+
+    ! starts with "--" → definitely option
+    if (arg(1:2) == "--") then
+        looks_like_option = .true.
+        return
+    endif
+
+    ! starts with "-" → could be number or option
+    if (arg(1:1) == "-") then
+        ! numeric values like -3, -1.2, -2e-3 are allowed
+        if (isnum(arg) > 0) then
+            looks_like_option = .false.
+        else
+            looks_like_option = .true.
+        endif
+        return
+    endif
+
+    looks_like_option = .false.
+end function looks_like_option
+
+
+! =====================================================================
+! Utility: Recognition of numbers (integer, real/double)
+! =====================================================================
 integer function isnum(txtval)
     ! Verify whether a character string represents a numerical value
     !

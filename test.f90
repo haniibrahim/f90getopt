@@ -2,7 +2,7 @@ program test
 use f90getopt
 implicit none
 
-character :: c
+character :: short
 character(len=*),parameter :: optshort = "ho:"
 ! type(option_s),dimension(4) :: longopts
 
@@ -34,30 +34,29 @@ opts(4) = option_s("alpha",   .false., "")
 ! If no options were committed
     ! ----------------------------
     if (command_argument_count() .eq. 0) then
-      print*, "ERROR: Program has options: -a. --alpha -b x --beta=x --beta x"
+      print*, "ERROR: Program has options: --alpha -h --help -- zeta=x --zeta x -o x --output=x --output x"
     end if
 
 ! optind = 1
 do
-    c = getopt(optshort,opts)
-    if (c == char(0)) exit
+    short = getopt(optshort,opts)
 
-    select case(c)
-    case('h')
-        print *,"Help selected"
+    select case(short)
+        case(char(0)) ! When all options are processed
+            exit
 
-    case('o')
-        print *,"Output file:", trim(optarg)
+        case('h')
+            print *,"Help selected"
 
-    ! ------ longopts without short equivalents ------
-    case(char(128+3))  ! corresponds to longopts(3)
-        print *,"ZETA => ",trim(optarg)
+        case('o')
+            print *,"Output file:", trim(optarg)
 
-    case(char(128+4))  ! corresponds to longopts(4)
-        print *,"ALPHA triggered"
+        ! ------ longopts without short equivalents ------
+        case(char(LONG+3))  ! corresponds to longopts(3)
+            print *,"ZETA => ",trim(optarg)
 
-    ! ! case default
-    !     print *,"Unknown option code",iachar(c)
+        case(char(LONG+4))  ! corresponds to longopts(4)
+            print *,"ALPHA triggered"
     end select
 enddo
 
