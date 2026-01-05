@@ -1,6 +1,7 @@
 module f90getopt
 implicit none
-public :: getopt, option_s, optarg, LONG, isnum
+private
+public :: getopt, option_s, optarg, isnum, LONG, check_duplicate
 
 #ifdef f2003
 use, intrinsic :: iso_fortran_env, only : stderr=>error_unit
@@ -18,7 +19,6 @@ type option_s
     character(len=80) :: name
     logical           :: has_arg
     character         :: short      ! shortopt char or char(0)
-    ! logical           :: has_short  ! .false. = longopt-only
 end type option_s
 
 integer, private :: grpind = 2
@@ -48,7 +48,7 @@ character function getopt(optstring,longopts)
         getopt = process_short(optstring,arg)
     else
         write(stderr,'(a,a,a)') &
-        "ERROR: Unrecognized option '", arg(1:len_trim(arg)), "'"
+        "STOP Unrecognized option '", arg(1:len_trim(arg)), "'"
         stop
     endif
 end function getopt
@@ -100,7 +100,7 @@ character function process_long(longopts, arg)
                     optarg = arg(len_arg+2:)
                     if (len_trim(optarg) == 0) then
                         write(stderr,'(a,a,a)') &
-                            "ERROR: Option '", trim(arg), "' requires a value"
+                            "STOP Option '", trim(arg), "' requires a value"
                         process_long = char(0)
                     endif
                     optind = optind + 1
@@ -112,7 +112,7 @@ character function process_long(longopts, arg)
                         ! ---- FIX: reject next option as value ----
                         if (looks_like_option(optarg)) then
                             write(stderr,'(a,a,a)') &
-                                "ERROR: Option '", trim(arg), "' requires a value"
+                                "STOP Option '", trim(arg), "' requires a value"
                             process_long = char(0)
                             return
                         endif
@@ -120,7 +120,7 @@ character function process_long(longopts, arg)
                         optind = optind + 1
                     else
                         write(stderr,'(a,a,a)') &
-                            "ERROR: Option '", trim(arg), "' requires a value"
+                            "STOP Option '", trim(arg), "' requires a value"
                         process_long = char(0)
                     endif
                 endif
@@ -133,7 +133,7 @@ character function process_long(longopts, arg)
     ! unknown long option
     optopt = '?'
     write(stderr,'(a,a,a)') &
-        "ERROR: Unrecognized option '", arg(1:len_arg), "'"
+        "STOP Unrecognized option '", arg(1:len_arg), "'"
         stop
 end function process_long
 
@@ -156,7 +156,7 @@ character function process_short(optstring, arg)
         process_short = '?'
         if (opterr) then
             write(stderr,'(a,a,a)') &
-                "ERROR: Unrecognized option '-", optopt, "'"
+                "STOP Unrecognized option '-", optopt, "'"
                 stop
         endif
     endif
@@ -177,7 +177,7 @@ character function process_short(optstring, arg)
             ! ---- Reject next option as value ----
             if (looks_like_option(optarg)) then
                 write(stderr,'(a,a,a)') &
-                    "ERROR: Option '-", optopt, "' requires a value"
+                    "STOP Option '-", optopt, "' requires a value"
                 process_short = char(0)
                 return
             endif
@@ -187,7 +187,7 @@ character function process_short(optstring, arg)
         else
             if (opterr) then
                 write(stderr,'(a,a,a)') &
-                    "ERROR: Option '-", optopt, "' requires a value"
+                    "STOP Option '-", optopt, "' requires a value"
             endif
             process_short = char(0)
         endif
@@ -205,7 +205,7 @@ character function process_short(optstring, arg)
 end function process_short
 
 ! =====================================================================
-! Utility: safe substring
+! INTERNAL HELPER ROUTINES
 ! =====================================================================
 character function substr(str,i,j)
     ! Return str(i:j) if 1 <= i <= j <= len(str),
@@ -226,10 +226,10 @@ character function substr(str,i,j)
 end function substr
 
 ! =====================================================================
-! Helper function to prevent misinterpretation of an option as a value
-! w/o causing problems w/ negativ numbers (e.g. -3)
-! =====================================================================
+
 logical function looks_like_option(arg)
+    ! Helper function to prevent misinterpretation of an option as a value
+    ! w/o causing problems w/ negativ numbers (e.g. -3)
     character(len=*), intent(in) :: arg
 
     if (len_trim(arg) == 0) then
@@ -259,7 +259,7 @@ end function looks_like_option
 
 
 ! =====================================================================
-! Utility: Recognition of numbers (integer, real/double)
+! UTILLITY ROUTINES
 ! =====================================================================
 integer function isnum(txtval)
     ! Verify whether a character string represents a numerical value
@@ -315,5 +315,33 @@ integer function isnum(txtval)
 
     isnum=0
 end function isnum
+
+! =====================================================================
+
+subroutine check_duplicate(c)
+    ! Checks for duplicate options
+    ! If duplicate option is present program is halted
+    !
+    ! 
+    implicit none
+    character, intent(in) :: c
+
+    integer       :: id
+    logical, save :: seen(0:255)
+    logical, save :: initialized = .false.
+
+    if (.not. initialized) then
+        seen = .false.
+        initialized = .true.
+    endif
+
+    id = ichar(c)
+
+    if (seen(id)) then
+        stop 'Option specified more than once'
+    else
+        seen(id) = .true.
+    endif
+end subroutine check_duplicate
 
 end module f90getopt
