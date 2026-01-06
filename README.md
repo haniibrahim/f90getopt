@@ -5,7 +5,7 @@ getopt()- and getopt_long()-like functionality (similar to the C-functions) for 
 
 *f90getopt* is developed as an easy to learn and compact library in just one source file. The `f90getopt.F90` file can just be added to existing source directories and deployed with them. There is no hassle with library dependencies. You can "learn" f90getopt in minutes and therefore it is even suitable for very small projects or "throw-away-code". It follows the GNU and POSIX command-line argument standards.
 
-[![](https://img.shields.io/badge/new_in-version_2-orange.svg)]() It can handle longopt-only options without a short equivalent now.
+[![](https://img.shields.io/badge/new_in-version_2-orange.svg)]() It can now process options that are **only available as long options** and have no short equivalent, and optionally check for **duplicate options**.
 
 * [Purpose](#Purpose)
 * [Features](#Features)
@@ -51,76 +51,82 @@ This is a full working example and it make use of long and short options. It is 
 
 ```f90
 program f90getopt_sample
-    ! Sample program for f90getopt function
-    use f90getopt
-    implicit none
+   ! Sample program for f90getopt module
+   use f90getopt
+   implicit none
 
-    ! local variables
-    character(len=1)           :: short             ! getopt-character
+   ! local variables
+   character(len=1)           :: c  ! getopt-character
 
-    ! START for shortopts
-    ! ----------------------------------
-    ! - optshort  = character array of short option characters without a space
-    !              colon ":" after a character says that this option requires an argument
-    character(len=*),parameter :: optshort = "ho:"
-    ! END shortopts
+   ! START for shortopts
+   ! ----------------------------------
+   ! - optshort  = character array of short option characters without a space
+   !              colon ":" after a character says that this option requires an argument
+   character(len=*),parameter :: optshort = "ho:"
+   ! END shortopts
 
-    ! START for longopts (OPTIONAL)
-    ! ----------------------------------
-    ! option_s derived type:
-    !   1st value = long option name (character array, max. 80)
-    !   2nd value = if option has an argument (logical)
-    !   3rd value = short option name (single character), same as in getopt()
-    !               or empty if longopt-only options
-    !
-    ! option_s is not needed if you just use short options
-    type(option_s) :: optlong(4)
-      ! longopts w/ short equivalents
-      optlong(1) = option_s("help",    .false., "h")
-      optlong(2) = option_s("output",  .true.,  "o")
-      ! longopt-only w/o short equivalents
-      optlong(3) = option_s("zeta",    .true.,  "")
-      optlong(4) = option_s("alpha",   .false., "")
-    ! END longopts
+   ! START for longopts (optional)
+   ! ----------------------------------
+   ! option_s derived type:
+   !   1st value = long option name (character array, max. 80)
+   !   2nd value = if option has an argument (logical)
+   !   3rd value = short option name (single character), same as in getopt()
+   !               or "achar(0)" if longopt-only options
+   !
+   ! option_s is not needed if you just use short options
+   type(option_s) :: optlong(4)
+   ! longopts w/ short equivalents
+   optlong(1) = option_s("help",    .false., "h")
+   optlong(2) = option_s("output",  .true.,  "o")
+   ! longopt-only w/o short equivalents
+   optlong(3) = option_s("zeta",    .true.,  achar(0))
+   optlong(4) = option_s("alpha",   .false., achar(0))
+   ! END longopts
 
-    ! If no options were passed
-    if (command_argument_count() .eq. 0) then
+   ! If no options were passed
+   if (command_argument_count() .eq. 0) then
       stop "Program has options: --alpha -h --help -- zeta=x --zeta x -o x --output=x --output x"
-    end if
+   end if
 
 
-    ! START Processing options
-    ! ------------------------
-    ! Process short options one by one and long options if specified in option_s
-    !
-    ! getopt(optshort, optlong):
-    !  - optshort = short options declaration, specified in optshort
-    !  - optlong  = long options declaration, if specified in option_s (OPTIONAL)
-    do
-        short = getopt(optshort,optlong)
+   ! START Processing options
+   ! ------------------------
+   ! Process short options one by one and long options if specified in option_s
+   !
+   ! getopt(optshort, optlong):
+   !  - optshort = short options declaration, specified in optshort
+   !  - optlong  = long options declaration, if specified in option_s (optional)
 
-        ! Check for duplicates (OPTIONAL)
-        ! NEW IN VERSION 2
-        call check_duplicate(short)
+   ! Check for duplicates in options
+   ! NEW IN VERSION 2
+   call check_duplicates(optshort, optlong)
 
-        select case(short)
-            ! When all options are processed
-            case(char(0))
-                exit
-            ! shortopts w/ or w/o long equivalents
+   do
+      c = getopt(optshort,optlong)
+
+      ! When all options are processed
+      if (c == achar(0) .and. optlongind == 0) exit
+
+      if (c /= achar(0)) then
+         select case(c)
+               ! shortopts w/ or w/o long equivalents
             case("h")
-                print *,"HELP triggered"
+               print *,"HELP triggered"
             case("o")
-                print *,"Output file: ", trim(optarg)
-            ! longopts w/o short equivalents
-            ! NEW IN VERSION 2
-            case(char(LONG+3))  ! corresponds to optlong(3)
-                print *,"ZETA => ",trim(optarg)
-            case(char(LONG+4))  ! corresponds to optlong(4)
-                print *,"ALPHA triggered"
-        end select
-    end do
-    ! END processing options
+               print *,"Output file: ", trim(optarg)
+         end select
+      else
+         ! longopts w/o short equivalents
+         ! NEW IN VERSION 2
+         select case(optlongind)
+            case(3)  ! corresponds to optlong(3)
+               print *,"ZETA => ",trim(optarg)
+            case(4)  ! corresponds to optlong(4)
+               print *,"ALPHA triggered"
+         end select
+      endif
+   end do
+   ! END processing options
 end program
 ```
 
