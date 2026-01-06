@@ -1,56 +1,72 @@
 program test
-use f90getopt
-implicit none
+    ! Sample program for f90getopt function
+    use f90getopt
+    implicit none
 
-character :: short
-character(len=*),parameter :: optshort = "ho:"
-! type(option_s),dimension(4) :: longopts
+    ! local variables
+    character(len=1)           :: short             ! getopt-character
 
-! ! longopts initialisieren
-! longopts(1)%name="help";    longopts(1)%has_arg=.false.; longopts(1)%short='h'
-! longopts(2)%name="output";  longopts(2)%has_arg=.true.;  longopts(2)%short='o'
+    ! START for shortopts
+    ! ----------------------------------
+    ! - optshort  = character array of short option characters without a space
+    !              colon ":" after a character says that this option requires an argument
+    character(len=*),parameter :: optshort = "ho:"
+    ! END shortopts
 
-! ! ---- longopt-only Optionen ----
-! longopts(3)%name="zeta";    longopts(3)%has_arg=.true.;  longopts(3)%short=""
-! longopts(4)%name="alpha";   longopts(4)%has_arg=.false.; longopts(4)%short=""
+    ! START for longopts (OPTIONAL)
+    ! ----------------------------------
+    ! option_s derived type:
+    !   1st value = long option name (character array, max. 80)
+    !   2nd value = if option has an argument (logical)
+    !   3rd value = short option name (single character), same as in getopt()
+    !               or empty if longopt-only options
+    !
+    ! option_s is not needed if you just use short options
+    type(option_s) :: optlong(4)
+      ! longopts w/ short equivalents
+      optlong(1) = option_s("help",    .false., "h")
+      optlong(2) = option_s("output",  .true.,  "o")
+      ! longopt-only w/o short equivalents
+      optlong(3) = option_s("zeta",    .true.,  "")
+      optlong(4) = option_s("alpha",   .false., "")
+    ! END longopts
 
-type(option_s) :: opts(4)
-! longopts initialisieren
-opts(1) = option_s("help",    .false., "h")
-opts(2) = option_s("output",  .true.,  "o")
-! ---- longopt-only Optionen ----
-opts(3) = option_s("zeta",    .true.,  "")
-opts(4) = option_s("alpha",   .false., "")
-
-! If no options were committed
-    ! ----------------------------
+    ! If no options were passed
     if (command_argument_count() .eq. 0) then
       stop "Program has options: --alpha -h --help -- zeta=x --zeta x -o x --output=x --output x"
     end if
 
-! optind = 1
-do
-    short = getopt(optshort,opts)
 
-    call check_duplicate(short)
+    ! START Processing options
+    ! ------------------------
+    ! Process short options one by one and long options if specified in option_s
+    !
+    ! getopt(optshort, optlong):
+    !  - optshort = short options declaration, specified in optshort
+    !  - optlong  = long options declaration, if specified in option_s (OPTIONAL)
+    do
+        short = getopt(optshort,optlong)
 
-    select case(short)
-        case(char(0)) ! When all options are processed
-            exit
+        ! Check for duplicates (OPTIONAL)
+        ! NEW IN VERSION 2
+        call check_duplicate(short)
 
-        case('h')
-            print *,"Help selected"
-
-        case('o')
-            print *,"Output file:", trim(optarg)
-
-        ! ------ longopts without short equivalents ------
-        case(char(LONG+3))  ! corresponds to opts(3)
-            print *,"ZETA => ",trim(optarg)
-
-        case(char(LONG+4))  ! corresponds to opts(4)
-            print *,"ALPHA triggered"
-    end select
-enddo
-
-end program test
+        select case(short)
+            ! When all options are processed
+            case(char(0))
+                exit
+            ! shortopts w/ or w/o long equivalents
+            case("h")
+                print *,"HELP triggered"
+            case("o")
+                print *,"Output file: ", trim(optarg)
+            ! longopts w/o short equivalents
+            ! NEW IN VERSION 2
+            case(char(LONG+3))  ! corresponds to optlong(3)
+                print *,"ZETA => ",trim(optarg)
+            case(char(LONG+4))  ! corresponds to optlong(4)
+                print *,"ALPHA triggered"
+        end select
+    end do
+    ! END processing options
+end program
