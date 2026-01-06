@@ -1,6 +1,0 @@
-* README.md aktualisieren
-* Modul mit Kommentaren versehen
-* Wiki anpassen
-    * Beispielcode anpassen
-    * Beschreibungen ergänzen
-
