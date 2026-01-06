@@ -1,8 +1,11 @@
-# f90getopt [![Status](https://img.shields.io/badge/status-stable-brightgreen.svg)]()
+# f90getopt [![Status](https://img.shields.io/badge/status-stable-brightgreen.svg)]() [![Version](https://img.shields.io/badge/version-2.0.0-orange.svg)]()
+
 
 getopt()- and getopt_long()-like functionality (similar to the C-functions) for modern Fortran 90/2003 or higher. Based on sources from [Mark Gates](http://lagrange.mechse.illinois.edu/mwest/partmc/partmc-2.2.1/src/getopt.F90).
 
 *f90getopt* is developed as an easy to learn and compact library in just one source file. The `f90getopt.F90` file can just be added to existing source directories and deployed with them. There is no hassle with library dependencies. You can "learn" f90getopt in minutes and therefore it is even suitable for very small projects or "throw-away-code". It follows the GNU and POSIX command-line argument standards.
+
+[![](https://img.shields.io/badge/new_in-version_2-orange.svg)]() It can now process options that are **only available as long options** and have no short equivalent, and optionally check for **duplicate options**.
 
 * [Purpose](#Purpose)
 * [Features](#Features)
@@ -34,11 +37,13 @@ Parsing features:
   * Parse short options without arguments and they can be embraced (e.g.: -xv)
   * Parse long options without arguments (e.g: --longarg)
   * Parse long options with arguments (e.g.: --arg 5.0 or --arg=5.0)
-  * ***NEW*** Check function for numbers (integer, real/double) in the arguments 
+  * Check function for numbers (integer, real/double) in the arguments
+  * ***NEW*** Parse long-only options without short equivalents with and without arguments
+  * ***NEW*** Check optional for duplicate options
 
 ## Requirements
 
-Fortran 2003 or Fortran 90 compiler which offers Fortran 2003 features *command_argument_count()* and *get_command_argument()*. E.g.: gfortran (GNU), g95 (g95.org), ifort (Intel), etc.
+Fortran 2003 or Fortran 90 compiler which offers Fortran 2003 features *command_argument_count()* and *get_command_argument()*. E.g.: gfortran (GNU), g95 (g95.org), ifort/ifx (Intel), etc.
 
 ## Example
 
@@ -46,59 +51,83 @@ This is a full working example and it make use of long and short options. It is 
 
 ```f90
 program f90getopt_sample
-    ! Sample program for f90getopt function
+   ! Sample program for f90getopt module
+   use f90getopt
+   implicit none
 
-    use f90getopt
-    implicit none
-    
-    ! local variables
-    character(len=1) :: short ! getopt-character
+   ! local variables
+   character(len=1)           :: c  ! getopt-character
 
-    ! START for longopts only (optional)
-    ! ----------------------------------
-    ! option_s derived type:
-    !   1st value = long option name (character array, max. 80)
-    !   2nd value = if option has an argument (logical)
-    !   3rd value = short option name (single character), same as in getopt()
-    ! option_s is not needed if you just use short options
-    type(option_s) :: opts(3)
-    opts(1) = option_s("alpha", .false., "a")
-    opts(2) = option_s("beta",  .true.,  "b")
-    opts(3) = option_s("help",  .false., "h")
-    ! END longopts
+   ! START for shortopts
+   ! ----------------------------------
+   ! - optshort  = character array of short option characters without a space
+   !              colon ":" after a character says that this option requires an argument
+   character(len=*),parameter :: optshort = "ho:"
+   ! END shortopts
+
+   ! START for longopts (optional)
+   ! ----------------------------------
+   ! option_s derived type:
+   !   1st value = long option name (character array, max. 80)
+   !   2nd value = if option has an argument (logical)
+   !   3rd value = short option name (single character), same as in getopt()
+   !               or "achar(0)" if longopt-only options
+   !
+   ! option_s is not needed if you just use short options
+   type(option_s) :: optlong(4)
+   ! longopts w/ short equivalents
+   optlong(1) = option_s("help",    .false., "h")
+   optlong(2) = option_s("output",  .true.,  "o")
+   ! longopt-only w/o short equivalents
+   optlong(3) = option_s("zeta",    .true.,  achar(0))
+   optlong(4) = option_s("alpha",   .false., achar(0))
+   ! END longopts
+
+   ! If no options were passed
+   if (command_argument_count() .eq. 0) then
+      stop "Program has options: --alpha -h --help -- zeta=x --zeta x -o x --output=x --output x"
+   end if
 
 
-    ! If no options were committed
-    ! ----------------------------
-    if (command_argument_count() .eq. 0) then
-      print*, "ERROR: Program has options: -a. --alpha -b x --beta=x --beta x"
-    end if
+   ! START Processing options
+   ! ------------------------
+   ! Process short options one by one and long options if specified in option_s
+   !
+   ! getopt(optshort, optlong):
+   !  - optshort = short options declaration, specified in optshort
+   !  - optlong  = long options declaration, if specified in option_s (optional)
 
+   ! Check for duplicates in options
+   ! NEW IN VERSION 2
+   call check_duplicates(optshort, optlong)
 
-    ! START Processing options
-    ! ------------------------
-    ! Process short options one by one and long options if specified in option_s
-    !
-    ! getopt(optstr, longopt):
-    !  - optstr  = character array of short option characters without a space
-    !              colon ":" after a character says that this option requires an argument
-    !  - longopt = long option declaration, if specified in option_s (optional)
-    do
-        short = getopt("ab:h", opts) ! Separate getopt-character for ifort compatibility 
-        select case(short)
-            case(char(0)) ! When all options are processed
-                exit
-            case("a")
-                print*, "option alpha/a"
-            case("b")
-                print*, "option beta/b=",  trim(optarg) ! "trim" is quite useful to avoid trailing blanks
+   do
+      c = getopt(optshort,optlong)
+
+      ! When all options are processed
+      if (c == achar(0) .and. optlongind == 0) exit
+
+      if (c /= achar(0)) then
+         select case(c)
+               ! shortopts w/ or w/o long equivalents
             case("h")
-                print*, "help-screen"
-        end select
-    end do
-    ! END processing options
-
-end program f90getopt_sample
+               print *,"HELP triggered"
+            case("o")
+               print *,"Output file: ", trim(optarg)
+         end select
+      else
+         ! longopts w/o short equivalents
+         ! NEW IN VERSION 2
+         select case(optlongind)
+            case(3)  ! corresponds to optlong(3)
+               print *,"ZETA => ",trim(optarg)
+            case(4)  ! corresponds to optlong(4)
+               print *,"ALPHA triggered"
+         end select
+      endif
+   end do
+   ! END processing options
+end program
 ```
 
 ### Build the sample program
@@ -116,13 +145,13 @@ gfortran f90getopt.F90 f90getopt_sample.f90 -o f90getopt_sample
 On Unices:
 
 ```
-./f90getopt_sample --alpha -b 23.2
+./f90getopt_sample -ho test.txt --zeta=15d-3 --alpha
 ```
 
-or on Windows:
+or in Windows Powershell:
 
 ```
-f90getopt_sample --alpha -b 23.2
+.\f90getopt_sample -h --output test.txt --zeta 15d-3 --alpha
 ```
 (you can omit `.exe`)
 
@@ -130,8 +159,10 @@ f90getopt_sample --alpha -b 23.2
 Output is:
 
 ```
- option alpha/a
- option beta/b=23.2
+ HELP triggered
+ Output file: test.txt
+ ZETA => 15d-3
+ ALPHA triggered
 ```
 
 A complete sample program with all features is provided in the [Wiki](https://github.com/haniibrahim/f90getopt/wiki/Full-working-example)
@@ -146,7 +177,8 @@ A complete sample program with all features is provided in the [Wiki](https://gi
 | 1.0.2   | Bug in README.md fixed                                                                                                 |
 | 1.0.3   | Bug in README.md (sample code section) fixed                                                                           |
 | 1.0.4   | Portable declaration of stdin/out/err fixed, minor refactoring and documentation, => GPL 3.0, Wiki page                |
-| 1.1.0   | New utility function "isnum()" checks for numbers in option's arguments, More sophisticated sample program in the Wiki |
+| 1.1.0   | New utility function "`isnum()`" checks for numbers in option's arguments, More sophisticated sample program in the Wiki |
+| 2.0.0   | Parses long-only options (`--longopts`). No more need to specify an short option. Can have an argument or not. Now complete GNU-compatible. New utility subroutine “`check_duplicate()`” checks for duplicate options optionally. |
 
 ## License
 
