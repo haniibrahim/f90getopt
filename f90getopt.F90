@@ -50,11 +50,6 @@ module f90getopt
    PUBLIC  :: getopt, option_s, optarg, isnum, optlongind, check_duplicates
    private ! all other are private (hidden)
    ! ------------------ Constant declarations ----------------------------------------------------------------------------------------
-   ! Basis for "short" option char
-   ! Represents 1st char after ASCII-chars range (0-127) for longopts w/o short equivalents
-   ! => 1st longopt w/o short equiv. = char(LONG+1)
-   ! => 2st longopt w/o short equiv. = char(LONG+2), etc.
-   integer, parameter:: LONG = 128
    ! Portable declaration of stderr
 #ifdef f2003
    use, intrinsic :: iso_fortran_env, only : stderr=>error_unit
